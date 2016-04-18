@@ -13,6 +13,7 @@ public class Ma_01 extends PApplet {
     }
 
     public void setup() {
+        background(255,0,0);
 
     }
 
