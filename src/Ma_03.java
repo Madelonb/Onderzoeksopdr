@@ -15,10 +15,10 @@ import processing.core.PVector;
 /**
  * Created by madelonbalk on 31-03-16.
  */
-public class Ma_02 extends PApplet {
+public class Ma_03 extends PApplet {
 
     public static void main(String[] args) {
-        PApplet.main("Ma_02", args);
+        PApplet.main("Ma_01", args);
     }
 
 
@@ -39,26 +39,16 @@ public class Ma_02 extends PApplet {
     }
 
     public void draw() {
+        background(255);
         if (export) {
-            println("export");
-            f = new Fontastic(this, "MadelonIIIFont");
+            f = new Fontastic(this, "MadelonIIFont");
             f.setAuthor("Madelon Balk");
         }
 
+        if ((keyPressed) && (key == 'e')){
+            loadSVG();
+        }
 
-        img = createGraphics(640, 480);
-
-        img.beginDraw();
-        img.background(255);
-        img.stroke(0);
-        img.strokeWeight(100);
-        img.noFill();
-        s = img.loadShape("e-02.svg");
-        editCharacter(s);
-        img.shape(s, 100, 100, 100, 100);
-        img.endDraw();
-
-        image(img, 0, 0, width, height);
 
         if (export) {
 
@@ -71,7 +61,6 @@ public class Ma_02 extends PApplet {
 
             FGlyph glyph = f.addGlyph('A');
 
-            /*
             for (int n=0; n<theBlobDetection.getBlobNb(); n++) {
                 Blob b = theBlobDetection.getBlob(n);
                 if (b!=null) {
@@ -79,35 +68,12 @@ public class Ma_02 extends PApplet {
                     for (PVector v : vecs) {
                         v.x *= img.width;
                         v.y *= img.height;
+
                     }
-
-
+                    glyph.addContour(vecs);
                 }
                 println();
             }
-
-*/
-            PVector[] vecs = new PVector[4];
-            vecs[0] = new PVector(0,0);
-            vecs[1] = new PVector(300,0);
-            vecs[2] = new PVector(300,300);
-            vecs[3] = new PVector(0,300);
-
-            // ook 1 en 2
-            glyph.addContour(vecs);
-
-            PVector[] vecsb = new PVector[4];
-            vecsb[0] = new PVector(100,100);
-            vecsb[1] = new PVector(200,100);
-            vecsb[2] = new PVector(200,200);
-            vecsb[3] = new PVector(100,200);
-
-            glyph.addContour(vecsb);
-
-
-
-            // nu zelfde maar dan binnenste
-
 
             f.buildFont();                                  // Build the font resulting in .ttf and .woff files
             // and a HTML template to preview the WOFF
@@ -179,7 +145,7 @@ public class Ma_02 extends PApplet {
             //v.x += random(-5, 5);
             //v.y += random(-5, 5);
             //ellipse(v.x, v.y, 2, 2);
-            //println("points"+i);
+            println("points"+i);
             text(""+i, v.x, v.y);
             if (i == 8) {
                 v.x = v.x + (mouseX-100);
@@ -262,5 +228,20 @@ void createFont() {
         }
     }
 
+    void loadSVG(){
+        img = createGraphics(640, 480);
+
+        img.beginDraw();
+        img.background(255);
+        img.stroke(0);
+        img.strokeWeight(100);
+        img.noFill();
+        s = img.loadShape("e-02.svg");
+        editCharacter(s);
+        img.shape(s, 100, 100, 100, 100);
+        img.endDraw();
+
+        image(img, 0, 0, width, height);
+    }
 
 }
