@@ -171,20 +171,20 @@ boolean has_typed_something() {
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-/*
+
 void update_cursor_position() {
- if (last_modified_shape != null) {
- //println("breedte "+last_modified_shape.getWidth());
- //cursor_x += last_modified_shape.getWidth();
- //println(last_modified_shape.getWidth());
- //cursor_x += 75;
- if (cursor_x + 0 > (width-200)) {
- cursor_x = 50;
- cursor_y += 100;
- }
- }
- }
- */
+  if (last_modified_shape != null) {
+    //println("breedte "+last_modified_shape.getWidth());
+    //cursor_x += last_modified_shape.getWidth();
+    //println(last_modified_shape.getWidth());
+    //cursor_x += 75;
+    if (cursor_x + 0 > (width-200)) {
+      cursor_x = 50;
+      cursor_y += 100;
+    }
+  }
+}
+
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void export() {
@@ -282,7 +282,7 @@ float shape_width(PShape original) {
 void shape_width(PShape original, float[] min_max) {
   int MIN = 0;
   int MAX = 1;
-    
+
   for (int i = 0; i < original.getVertexCount(); i++) {
     PVector result = original.getVertex(i);
     if (result.x > min_max[MAX]) min_max[MAX] = result.x;
