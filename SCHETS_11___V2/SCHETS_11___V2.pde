@@ -6,12 +6,12 @@ final int MAX_SIZE = 1024;
 
 char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
-
 int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
 float[] x_positions = new float[MAX_SIZE];
 float[] y_positions = new float[MAX_SIZE];
+
 
 float charWidth;
 
@@ -32,6 +32,7 @@ float scale = 0.5;
 
 void setup() {
   size(1200, 800);
+  theBlobDetection = new BlobDetection(1200, 800);
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -60,11 +61,18 @@ void draw() {
 
   // display
   {
+
+    stroke(0);
+    strokeWeight(10);
+    strokeCap(SQUARE);
+    noFill();
+
     for (int i = 0; i <= index; i++) {
       PShape shape = modified_shapes[i];
+      shape.disableStyle();
       float x = x_positions[i];
       float y = y_positions[i];
-      shape(shape, x, y, shape.width*scale, shape.height*scale);
+      shape(shape, x, y);
     }
   }
 
@@ -82,18 +90,7 @@ void keyPressed() {
   } else if (char_ok(key)) {
     index++;
     typed_chars[index] = key;
-    //update_cursor_position();
-    if (last_modified_shape != null) {
-      //println("breedte "+last_modified_shape.getWidth());
-      //cursor_x += last_modified_shape.getWidth() * scale;
-      cursor_x += shape_width(last_modified_shape)*scale;
-      //println(last_modified_shape.getWidth());
-      //cursor_x += 75;
-      if (cursor_x + 0 > (width-200)) {
-        cursor_x = 50;
-        cursor_y += 100;
-      }
-    }
+    update_cursor_position();
   }
 
   key_pressed_time = millis();
@@ -133,10 +130,11 @@ PShape loadCharShape(char c) {
 
 PShape shape_modifier1(PShape original) {
 
-  original.disableStyle();
 
   for (int i = 0; i < original.getVertexCount(); i++) {
     PVector result = original.getVertex(i);
+    result.x = result.x *scale;
+    result.y = result.y *scale;
     //if (result.y < 300) {
     //  result.y = result.y + (mouseY-800);
     //}
@@ -155,11 +153,6 @@ PShape shape_modifier1(PShape original) {
     }
   }
 
-
-  stroke(0);
-  strokeWeight(1);
-  strokeCap(SQUARE);
-  noFill();
   return original;
 }
 
@@ -175,7 +168,7 @@ boolean has_typed_something() {
 void update_cursor_position() {
   if (last_modified_shape != null) {
     //println("breedte "+last_modified_shape.getWidth());
-    //cursor_x += last_modified_shape.getWidth();
+    cursor_x += last_modified_shape.getWidth();
     //println(last_modified_shape.getWidth());
     //cursor_x += 75;
     if (cursor_x + 0 > (width-200)) {
@@ -188,6 +181,9 @@ void update_cursor_position() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void export() {
+
+  f = new Fontastic(this, "MadelonFont");
+  f.setAuthor("Madelon Balk");
 
   if (has_typed_something()) {
     println("starting export");
@@ -208,7 +204,6 @@ void export() {
       image(img, 0, 0, width, height);
 
       // blobscan
-      theBlobDetection = new BlobDetection(img.width, img.height);
       theBlobDetection.setPosDiscrimination(false);
       theBlobDetection.setThreshold(0.38f);
       theBlobDetection.computeBlobs(img.pixels);
