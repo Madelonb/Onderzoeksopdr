@@ -151,7 +151,7 @@ PShape shape_modifier1(PShape original) {
     if (result.y < 100) {
      result.y = result.y + (mouseY-800);
     }
-    if (result.x > 30) {
+    if (result.x < 30) {
      result.x = result.x + (mouseX-800);
     }
 
