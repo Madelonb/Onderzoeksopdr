@@ -33,6 +33,7 @@ float scale = 0.5;
 void setup() {
   size(1200, 800);
   theBlobDetection = new BlobDetection(1200, 800);
+  img = createGraphics(1200, 800);
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -195,7 +196,6 @@ void export() {
       PShape shape = loadCharShape(c);
       PShape modified_shape = shape_modifier1(shape);
       // draw on PGraphics
-      img = createGraphics(1200, 800);
       img.beginDraw();
       img.background(255);
       img.shape(modified_shape, 100, 100, 100, 100);
