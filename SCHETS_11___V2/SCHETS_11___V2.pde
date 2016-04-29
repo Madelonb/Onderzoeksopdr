@@ -73,6 +73,8 @@ void draw() {
     strokeWeight(10);
     strokeCap(SQUARE);
     noFill();
+    
+
 
     for (int i = 0; i <= index; i++) {
       PShape shape = modified_shapes[i];
@@ -99,6 +101,7 @@ void keyPressed() {
     typed_chars[index] = key;
     update_cursor_position();
   }
+  
 
 
   time_diff = millis() - last_millis;
@@ -136,8 +139,8 @@ PShape loadCharShape(char c) {
 
 PShape shape_modifier1(PShape original) {
 
-  //original.width = (original.width * scale) + (mouseX-800);
-  original.width *= scale * key_pressed_time/100;
+  original.width = original.width * scale + (mouseX-800);
+  //original.width *= scale * key_pressed_time/100;
   
   for (int i = 0; i < original.getVertexCount(); i++) {
     PVector result = original.getVertex(i);
@@ -145,14 +148,14 @@ PShape shape_modifier1(PShape original) {
     result.y = result.y *scale;
     
 
-    //if (result.y < 100) {
-    // result.y = result.y + (mouseY-800);
-    //}
-    //if (result.x < 30) {
-    // result.x = result.x + (mouseX-800);
-    //}
+    if (result.y < 100) {
+     result.y = result.y + (mouseY-800);
+    }
+    if (result.x > 30) {
+     result.x = result.x + (mouseX-800);
+    }
 
-    result.x = result.x * key_pressed_time/100;
+    //result.x = result.x * key_pressed_time/100;
     println("key" +time_diff);
 
     original.setVertex(i, result.x, result.y);
