@@ -11,24 +11,27 @@ char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
 float[] x_positions = new float[MAX_SIZE];
 float[] y_positions = new float[MAX_SIZE];
+float[] stroke_weights = new float [MAX_SIZE];
 
 
 float charWidth;
 
 float cursor_x = 50;
-float cursor_y = 100;
+float cursor_y = 50;
+float thickness = 1;
 
 Fontastic f;
 BlobDetection theBlobDetection;
 PShape last_modified_shape;
 PGraphics img;
 
-int key_pressed_time;
-int dif;
-int last;
-float map;
 
-float scale = 0.5;
+int time_diff;
+int last_millis;;
+float key_pressed_time;
+
+float scale = 0.25;
+float kerning = 20;
 
 void setup() {
   size(1200, 800);
@@ -55,6 +58,9 @@ void draw() {
     // do this elsewhere?
     x_positions[index] = cursor_x;
     y_positions[index] = cursor_y;
+    stroke_weights[index] = thickness;
+    strokeWeight(thickness);
+    line(cursor_x+shape.width+kerning,cursor_y,cursor_x+shape.width+kerning,cursor_y+200);
 
     //display
     //shape(modified_shape, cursor_x, cursor_y);
@@ -94,12 +100,11 @@ void keyPressed() {
     update_cursor_position();
   }
 
-  key_pressed_time = millis();
-  dif = key_pressed_time - last;
-  println(dif);
-  last = key_pressed_time;
 
-  map = map(dif, 0, 2000, 50, 300);
+  time_diff = millis() - last_millis;
+  last_millis = millis();
+
+  key_pressed_time = map(constrain(time_diff, 100, 1500), 100, 1500, 75, 200);
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -120,7 +125,7 @@ PShape loadCharShape(char c) {
   if (cs.equals(" ")) cs = "space";
 
   String file = cs+".svg";
-  String dataFolder = "../MadFontData/";
+  String dataFolder = "../MadFontData/Alfabet SVG IIII/";
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
@@ -131,19 +136,24 @@ PShape loadCharShape(char c) {
 
 PShape shape_modifier1(PShape original) {
 
-
+  //original.width = (original.width * scale) + (mouseX-800);
+  original.width *= scale * key_pressed_time/100;
+  
   for (int i = 0; i < original.getVertexCount(); i++) {
     PVector result = original.getVertex(i);
     result.x = result.x *scale;
     result.y = result.y *scale;
-    //if (result.y < 300) {
-    //  result.y = result.y + (mouseY-800);
+    
+
+    //if (result.y < 100) {
+    // result.y = result.y + (mouseY-800);
     //}
-    //if (result.x < 250) {
-    //  result.x = result.x + (mouseX-800);
+    //if (result.x < 30) {
+    // result.x = result.x + (mouseX-800);
     //}
 
-    result.x = result.x * map/100;
+    result.x = result.x * key_pressed_time/100;
+    println("key" +time_diff);
 
     original.setVertex(i, result.x, result.y);
   }
@@ -168,13 +178,11 @@ boolean has_typed_something() {
 
 void update_cursor_position() {
   if (last_modified_shape != null) {
-    //println("breedte "+last_modified_shape.getWidth());
-    cursor_x += last_modified_shape.getWidth();
-    //println(last_modified_shape.getWidth());
-    //cursor_x += 75;
+    cursor_x += last_modified_shape.getWidth() + kerning;
+    //println("width" +last_modified_shape.getWidth());
     if (cursor_x + 0 > (width-200)) {
       cursor_x = 50;
-      cursor_y += 100;
+      cursor_y += 150;
     }
   }
 }
@@ -207,7 +215,10 @@ void export() {
       theBlobDetection.setPosDiscrimination(false);
       theBlobDetection.setThreshold(0.38f);
       theBlobDetection.computeBlobs(img.pixels);
-
+      
+      // create glyph
+      FGlyph glyph = f.addGlyph(c);
+      
       // blobs to PVector[]
       for (int n=0; n<theBlobDetection.getBlobNb(); n++) {
         Blob b = theBlobDetection.getBlob(n);
@@ -217,10 +228,8 @@ void export() {
             v.x *= img.width;
             v.y *= img.height;
           }
-          // create glyph
+          
           // add contour
-
-          FGlyph glyph = f.addGlyph(c);
           glyph.addContour(vecs);
         }
       }
@@ -266,29 +275,28 @@ PVector[] blob_to_PVector_array(Blob the_blob) {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 
+//float shape_width(PShape original) {
+//  float[] min_max = new float[] {MAX_FLOAT, MIN_FLOAT};
+//  shape_width(original, min_max);
+//  return min_max[1] - min_max[0];
+//}
 
-float shape_width(PShape original) {
-  float[] min_max = new float[] {MAX_FLOAT, MIN_FLOAT};
-  shape_width(original, min_max);
-  return min_max[1] - min_max[0];
-}
 
+//void shape_width(PShape original, float[] min_max) {
+//  int MIN = 0;
+//  int MAX = 1;
 
-void shape_width(PShape original, float[] min_max) {
-  int MIN = 0;
-  int MAX = 1;
+//  for (int i = 0; i < original.getVertexCount(); i++) {
+//    PVector result = original.getVertex(i);
+//    if (result.x > min_max[MAX]) min_max[MAX] = result.x;
+//    if (result.x < min_max[MIN]) min_max[MIN] = result.x;
+//  }
 
-  for (int i = 0; i < original.getVertexCount(); i++) {
-    PVector result = original.getVertex(i);
-    if (result.x > min_max[MAX]) min_max[MAX] = result.x;
-    if (result.x < min_max[MIN]) min_max[MIN] = result.x;
-  }
-
-  if (original.getChildCount() > 0) {
-    for (int j = 0; j < original.getChildCount(); j++) {
-      shape_width(original.getChild(j), min_max);
-    }
-  }
-}
+//  if (original.getChildCount() > 0) {
+//    for (int j = 0; j < original.getChildCount(); j++) {
+//      shape_width(original.getChild(j), min_max);
+//    }
+//  }
+//}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
