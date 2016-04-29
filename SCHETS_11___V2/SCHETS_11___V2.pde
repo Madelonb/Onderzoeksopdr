@@ -139,7 +139,7 @@ PShape loadCharShape(char c) {
 
 PShape shape_modifier1(PShape original) {
 
-  original.width = original.width * scale + (mouseX-800);
+  original.width = original.width * scale - (mouseX-800);
   //original.width *= scale * key_pressed_time/100;
   
   for (int i = 0; i < original.getVertexCount(); i++) {
