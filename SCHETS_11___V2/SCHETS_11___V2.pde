@@ -1,7 +1,10 @@
 import blobDetection.*;
 import fontastic.*;
+import processing.serial.*;
+
 
 final int MAX_SIZE = 1024;
+Serial port;
 
 
 char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
@@ -11,14 +14,12 @@ char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
 float[] x_positions = new float[MAX_SIZE];
 float[] y_positions = new float[MAX_SIZE];
-float[] stroke_weights = new float [MAX_SIZE];
-
+float[] values_pressure_sensor = new float [MAX_SIZE];
 
 float charWidth;
 
 float cursor_x = 50;
 float cursor_y = 50;
-float thickness = 1;
 
 Fontastic f;
 BlobDetection theBlobDetection;
@@ -27,16 +28,40 @@ PGraphics img;
 
 
 int time_diff;
-int last_millis;;
+int last_millis;
+;
 float key_pressed_time;
 
 float scale = 0.25;
 float kerning = 20;
 
+//Arduino
+
+final static boolean USE_ARDUINO = false;
+
+int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
+int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
+int BPM;         // HOLDS HEART RATE VALUE FROM ARDUINO
+int portFail = 1;
+int readFail = 1;
+float temp;
+int portNumber = 1;
+int lf = 10;      // ASCII linefeed 
+float force;
+
 void setup() {
   size(1200, 800);
   theBlobDetection = new BlobDetection(1200, 800);
   img = createGraphics(1200, 800);
+
+  if (USE_ARDUINO) {
+    println(Serial.list());    // print a list of available serial ports
+    // choose the number between the [] that is connected to the Arduino
+    port = new Serial(this, Serial.list()[4], 9600);  // make sure Arduino is talking serial at this baud rate
+    port.clear();            // flush buffer
+    port.bufferUntil(lf);  // set buffer full flag on receipt of carriage return
+    portFail = 0;
+  }
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -58,9 +83,8 @@ void draw() {
     // do this elsewhere?
     x_positions[index] = cursor_x;
     y_positions[index] = cursor_y;
-    stroke_weights[index] = thickness;
-    strokeWeight(thickness);
-    line(cursor_x+shape.width+kerning,cursor_y,cursor_x+shape.width+kerning,cursor_y+200);
+    values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
+    line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, cursor_y+200);
 
     //display
     //shape(modified_shape, cursor_x, cursor_y);
@@ -70,27 +94,40 @@ void draw() {
   {
 
     stroke(0);
-    strokeWeight(10);
+    //strokeWeight(10);
     strokeCap(SQUARE);
     noFill();
-    
+
 
 
     for (int i = 0; i <= index; i++) {
+      force = random(0, 1024);
       PShape shape = modified_shapes[i];
       shape.disableStyle();
       float x = x_positions[i];
       float y = y_positions[i];
+      strokeWeight(map(values_pressure_sensor[i], 0, 1024, 2, 20));
       shape(shape, x, y);
     }
   }
 
   text(index, 20, 100);
+
+
+  // PRINT THE DATA AND VARIABLE VALUES
+  fill(0);
+  text(temp + "°C", (width-200), (height-50));
+  text(BPM + " BPM", (width-100), (height-50));    // print the Beats Per Minute
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+int last_keypressed_frameCount = -1; // used to avoid running keyPressed more than once in one frame
+
 void keyPressed() {
+  if (last_keypressed_frameCount == frameCount) return;
+  last_keypressed_frameCount = frameCount;
+
   if (key == CODED) {
     if (keyCode == CONTROL) {// && (key == 's' || key == 'S')) {
       println(key);
@@ -101,13 +138,10 @@ void keyPressed() {
     typed_chars[index] = key;
     update_cursor_position();
   }
-  
 
 
   time_diff = millis() - last_millis;
   last_millis = millis();
-
-
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -139,28 +173,48 @@ PShape loadCharShape(char c) {
 
 PShape shape_modifier1(PShape original) {
 
-  original.width = original.width * scale - (mouseX-800);
-  original.width *= key_pressed_time/100;
-  //original.width *= scale * key_pressed_time/100;
+  float heartBeatY = map(BPM, 60, 200, 300, 75);
+  float tempX = map(temp, 25, 30, 0, -50);
   
+  if (USE_ARDUINO) {
+    original.width = original.width * scale - (tempX);
+    original.width *= key_pressed_time/100;
+  } else {
+    original.width = original.width * scale - (mouseX-800);
+    original.width *= key_pressed_time/100;
+  }
+
+
   for (int i = 0; i < original.getVertexCount(); i++) {
     PVector result = original.getVertex(i);
+
     result.x = result.x *scale;
     result.y = result.y *scale;
-    
 
-    if (result.y < 100) {
-     result.y = result.y + (mouseY-800);
-    }
-    if (result.x < 30) {
-     result.x = result.x + (mouseX-800);
+
+
+    if (USE_ARDUINO) {
+      if (result.y < 100) {
+        if (result.x < 100) {
+          result.y = result.y + (heartBeatY-300);
+          //result.y = result.y + (mouseY-300);
+          result.x = result.x - (tempX);
+        }
+      }
+    } else {
+      if (result.y < 100) {
+        result.y = result.y + (mouseY-800);
+      }
+      if (result.x < 30) {
+        result.x = result.x + (mouseX-800);
+      }
     }
 
 
     key_pressed_time = map(constrain(time_diff, 100, 1500), 100, 1500, 75, 200);
     result.x = result.x * key_pressed_time/100;
-    
-    println("key" +time_diff);
+
+    //println("key" +time_diff);
 
     original.setVertex(i, result.x, result.y);
   }
@@ -222,10 +276,10 @@ void export() {
       theBlobDetection.setPosDiscrimination(false);
       theBlobDetection.setThreshold(0.38f);
       theBlobDetection.computeBlobs(img.pixels);
-      
+
       // create glyph
       FGlyph glyph = f.addGlyph(c);
-      
+
       // blobs to PVector[]
       for (int n=0; n<theBlobDetection.getBlobNb(); n++) {
         Blob b = theBlobDetection.getBlob(n);
@@ -235,7 +289,7 @@ void export() {
             v.x *= img.width;
             v.y *= img.height;
           }
-          
+
           // add contour
           glyph.addContour(vecs);
         }
