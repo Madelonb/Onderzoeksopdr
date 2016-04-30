@@ -107,7 +107,7 @@ void keyPressed() {
   time_diff = millis() - last_millis;
   last_millis = millis();
 
-  key_pressed_time = map(constrain(time_diff, 100, 1500), 100, 1500, 75, 200);
+
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -140,6 +140,7 @@ PShape loadCharShape(char c) {
 PShape shape_modifier1(PShape original) {
 
   original.width = original.width * scale - (mouseX-800);
+  original.width *= key_pressed_time/100;
   //original.width *= scale * key_pressed_time/100;
   
   for (int i = 0; i < original.getVertexCount(); i++) {
@@ -155,7 +156,10 @@ PShape shape_modifier1(PShape original) {
      result.x = result.x + (mouseX-800);
     }
 
-    //result.x = result.x * key_pressed_time/100;
+
+    key_pressed_time = map(constrain(time_diff, 100, 1500), 100, 1500, 75, 200);
+    result.x = result.x * key_pressed_time/100;
+    
     println("key" +time_diff);
 
     original.setVertex(i, result.x, result.y);
