@@ -37,11 +37,11 @@ float kerning = 20;
 
 //Arduino
 
-final static boolean USE_ARDUINO = false;
+final static boolean USE_ARDUINO = true;
 
 int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
 int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
-int BPM;         // HOLDS HEART RATE VALUE FROM ARDUINO
+int BPM = 70;         // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
 float temp;
@@ -59,7 +59,7 @@ void setup() {
     // choose the number between the [] that is connected to the Arduino
     port = new Serial(this, Serial.list()[4], 9600);  // make sure Arduino is talking serial at this baud rate
     port.clear();            // flush buffer
-    port.bufferUntil(lf);  // set buffer full flag on receipt of carriage return
+    port.bufferUntil('\n');  // set buffer full flag on receipt of carriage return
     portFail = 0;
   }
 }
@@ -101,7 +101,7 @@ void draw() {
 
 
     for (int i = 0; i <= index; i++) {
-      force = random(0, 1024);
+      //force = random(0, 1024);
       PShape shape = modified_shapes[i];
       shape.disableStyle();
       float x = x_positions[i];
@@ -112,7 +112,6 @@ void draw() {
   }
 
   text(index, 20, 100);
-
 
   // PRINT THE DATA AND VARIABLE VALUES
   fill(0);
@@ -175,7 +174,7 @@ PShape shape_modifier1(PShape original) {
 
   float heartBeatY = map(BPM, 60, 200, 300, 75);
   float tempX = map(temp, 25, 30, 0, -50);
-  
+
   if (USE_ARDUINO) {
     original.width = original.width * scale - (tempX);
     original.width *= key_pressed_time/100;
@@ -359,5 +358,37 @@ PVector[] blob_to_PVector_array(Blob the_blob) {
 //    }
 //  }
 //}
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+float[] list = new float[2]; 
+
+void serialEvent(Serial port) {
+
+  try {
+    String inString = port.readString();
+    //println(inString); // <- uncomment this to debug serial input from Arduino
+    //println("raw: \t" + inString); // <- uncomment this to debug serial input from Arduino
+
+    if (inString != null) {
+      inString = trim(inString);
+      
+      //list = float(splitTokens(inString, ", \t"));
+      list = float(split(inString, ','));
+      //println("list[0]" +list[0]);
+      //println("list[1]" +list[1]);
+      
+      temp = list[0];
+      force = list[1];
+      
+      
+      //force = Float.parseFloat(list[0]);
+    }
+  }
+
+  catch(RuntimeException e) {
+    e.printStackTrace();
+  }
+}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
