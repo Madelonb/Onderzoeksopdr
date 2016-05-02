@@ -32,8 +32,8 @@ int last_millis;
 ;
 float key_pressed_time;
 
-float scale = 0.25;
-float kerning = 20;
+float scale = 0.05;
+float kerning = 100;
 
 //Arduino
 
@@ -41,13 +41,14 @@ final static boolean USE_ARDUINO = true;
 
 int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
 int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
-int BPM = 70;         // HOLDS HEART RATE VALUE FROM ARDUINO
+int BPM = 60;         // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
 float temp;
 int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
-float force;
+float force = 2;
+float fontWeight;
 
 void setup() {
   size(1200, 800);
@@ -57,7 +58,7 @@ void setup() {
   if (USE_ARDUINO) {
     println(Serial.list());    // print a list of available serial ports
     // choose the number between the [] that is connected to the Arduino
-    port = new Serial(this, Serial.list()[4], 9600);  // make sure Arduino is talking serial at this baud rate
+    port = new Serial(this, Serial.list()[4], 9600    );  // make sure Arduino is talking serial at this baud rate
     port.clear();            // flush buffer
     port.bufferUntil('\n');  // set buffer full flag on receipt of carriage return
     portFail = 0;
@@ -69,6 +70,8 @@ void setup() {
 void draw() {
   background(255);
   fill(0);
+
+  println("force" +force);
 
   if (has_typed_something()) {
     String s = new String(subset(typed_chars, 0, index+1));
@@ -86,6 +89,7 @@ void draw() {
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, cursor_y+200);
 
+
     //display
     //shape(modified_shape, cursor_x, cursor_y);
   }
@@ -96,6 +100,7 @@ void draw() {
     stroke(0);
     //strokeWeight(10);
     strokeCap(SQUARE);
+    strokeJoin(BEVEL);
     noFill();
 
 
@@ -106,10 +111,14 @@ void draw() {
       shape.disableStyle();
       float x = x_positions[i];
       float y = y_positions[i];
-      strokeWeight(map(values_pressure_sensor[i], 0, 1024, 2, 20));
+      float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 2, 20));
+      strokeWeight(fontWeight);
+      kerning = (100*scale) + fontWeight;
       shape(shape, x, y);
     }
   }
+  
+
 
   text(index, 20, 100);
 
@@ -139,6 +148,7 @@ void keyPressed() {
   }
 
 
+
   time_diff = millis() - last_millis;
   last_millis = millis();
 }
@@ -161,7 +171,7 @@ PShape loadCharShape(char c) {
   if (cs.equals(" ")) cs = "space";
 
   String file = cs+".svg";
-  String dataFolder = "../MadFontData/Alfabet SVG IIII/";
+  String dataFolder = "../MadFontData/Alfabet SVG V/";
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
@@ -173,13 +183,13 @@ PShape loadCharShape(char c) {
 PShape shape_modifier1(PShape original) {
 
   float heartBeatY = map(BPM, 60, 200, 300, 75);
-  float tempX = map(temp, 25, 30, 0, -50);
+  float tempX = map(temp, 25, 35, 20, -20);
 
   if (USE_ARDUINO) {
-    original.width = original.width * scale - (tempX);
+    original.width = original.width * scale; //- (tempX);
     original.width *= key_pressed_time/100;
   } else {
-    original.width = original.width * scale - (mouseX-800);
+    original.width = original.width * scale + (mouseX-300);
     original.width *= key_pressed_time/100;
   }
 
@@ -193,22 +203,34 @@ PShape shape_modifier1(PShape original) {
 
 
     if (USE_ARDUINO) {
-      if (result.y < 100) {
-        if (result.x < 100) {
-          result.y = result.y + (heartBeatY-300);
-          //result.y = result.y + (mouseY-300);
-          result.x = result.x - (tempX);
-        }
+      if (result.y < (500 * scale)) {
+        //if (result.x < 100) {
+        //result.y = result.y + (heartBeatY-300);
+        result.y = result.y + (tempX);
+        //result.y = result.y + (mouseY-300);
+        //result.x = result.x - (tempX);
       }
+
+      //italic:
+      //result.x = result.x - result.y;
+      //}
     } else {
-      if (result.y < 100) {
+      if (result.y < (500 * scale)) {
         result.y = result.y + (mouseY-800);
       }
-      if (result.x < 30) {
+      if (result.x < (150*scale)) {
         result.x = result.x + (mouseX-800);
       }
     }
 
+    //if (result.y < 110) {
+    //   //if (result.x < 100) {
+    //     result.y = result.y + (mouseY-300);
+    //     //result.y = result.y + (mouseY-300);
+    //     result.x = result.x + (mouseX-300);
+    //     //result.x = result.x + ((mouseX + result.x)-800);
+    //   }
+    // //}
 
     key_pressed_time = map(constrain(time_diff, 100, 1500), 100, 1500, 75, 200);
     result.x = result.x * key_pressed_time/100;
@@ -242,7 +264,7 @@ void update_cursor_position() {
     //println("width" +last_modified_shape.getWidth());
     if (cursor_x + 0 > (width-200)) {
       cursor_x = 50;
-      cursor_y += 150;
+      cursor_y += 750 * scale;
     }
   }
 }
@@ -372,16 +394,17 @@ void serialEvent(Serial port) {
 
     if (inString != null) {
       inString = trim(inString);
-      
+
       //list = float(splitTokens(inString, ", \t"));
       list = float(split(inString, ','));
       //println("list[0]" +list[0]);
       //println("list[1]" +list[1]);
-      
+
       temp = list[0];
-      force = list[1];
-      
-      
+      if (list[1] > 50) {
+        force = list[1];
+      }
+
       //force = Float.parseFloat(list[0]);
     }
   }
