@@ -3,6 +3,9 @@ import fontastic.*;
 import processing.serial.*;
 import processing.pdf.*;
 
+final static boolean USE_ARDUINO = false;
+final boolean DEBUG = true;
+
 boolean record; 
 
 final int MAX_SIZE = 1024;
@@ -26,7 +29,7 @@ float cursor_y = 50;
 Fontastic f;
 BlobDetection theBlobDetection;
 PShape last_modified_shape;
-PGraphics img;
+PGraphics pg_blob;
 
 
 int time_diff;
@@ -39,7 +42,7 @@ float kerning = 100;
 
 //Arduino
 
-final static boolean USE_ARDUINO = false;
+
 
 int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
 int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
@@ -49,13 +52,13 @@ int readFail = 1;
 float temp;
 int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
-float force = 2;
+float force = 10;
 float fontWeight;
 
 void setup() {
   size(474, 672);
   theBlobDetection = new BlobDetection(1200, 800);
-  img = createGraphics(1200, 800);
+  pg_blob = createGraphics(1200, 800);
 
   if (USE_ARDUINO) {
     println(Serial.list());    // print a list of available serial ports
@@ -299,17 +302,19 @@ void export() {
       PShape shape = loadCharShape(c);
       PShape modified_shape = shape_modifier1(shape);
       // draw on PGraphics
-      img.beginDraw();
-      img.background(255);
-      img.shape(modified_shape, 100, 100, 100, 100);
-      img.endDraw();
+      pg_blob.beginDraw();
+      pg_blob.background(255);
+      pg_blob.shape(modified_shape);
+      pg_blob.endDraw();
+      
+      pg_blob.save("../debug/blob/"+c+".png");
 
-      image(img, 0, 0, width, height);
+      image(pg_blob, 0, 0, width, height);
 
       // blobscan
       theBlobDetection.setPosDiscrimination(false);
       theBlobDetection.setThreshold(0.38f);
-      theBlobDetection.computeBlobs(img.pixels);
+      theBlobDetection.computeBlobs(pg_blob.pixels);
 
       // create glyph
       FGlyph glyph = f.addGlyph(c);
@@ -320,8 +325,8 @@ void export() {
         if (b!=null) {
           PVector[] vecs = blob_to_PVector_array(b);
           for (PVector v : vecs) {
-            v.x *= img.width;
-            v.y *= img.height;
+            v.x *= pg_blob.width;
+            v.y *= pg_blob.height;
           }
 
           // add contour
