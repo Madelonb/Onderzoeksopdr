@@ -1,7 +1,9 @@
 import blobDetection.*;
 import fontastic.*;
 import processing.serial.*;
+import processing.pdf.*;
 
+boolean record; 
 
 final int MAX_SIZE = 1024;
 Serial port;
@@ -32,12 +34,12 @@ int last_millis;
 ;
 float key_pressed_time;
 
-float scale = 0.05;
+float scale = 0.1;
 float kerning = 100;
 
 //Arduino
 
-final static boolean USE_ARDUINO = true;
+final static boolean USE_ARDUINO = false;
 
 int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
 int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
@@ -51,7 +53,7 @@ float force = 2;
 float fontWeight;
 
 void setup() {
-  size(1200, 800);
+  size(474, 672);
   theBlobDetection = new BlobDetection(1200, 800);
   img = createGraphics(1200, 800);
 
@@ -68,6 +70,10 @@ void setup() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
+  if (record) {
+    beginRecord(PDF, "frame-####.pdf");
+  }
+
   background(255);
   fill(0);
 
@@ -75,7 +81,7 @@ void draw() {
 
   if (has_typed_something()) {
     String s = new String(subset(typed_chars, 0, index+1));
-    text(s, 20, 20);
+    //text(s, 20, 20);
 
     // we want to edit the last character typed
     char c = typed_chars[index];
@@ -87,7 +93,7 @@ void draw() {
     x_positions[index] = cursor_x;
     y_positions[index] = cursor_y;
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
-    line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, cursor_y+200);
+    //line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, (cursor_y+200) * scale);
 
 
     //display
@@ -111,13 +117,13 @@ void draw() {
       shape.disableStyle();
       float x = x_positions[i];
       float y = y_positions[i];
-      float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 2, 20));
+      float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 10, 100)) * scale;
       strokeWeight(fontWeight);
-      kerning = (100*scale) + fontWeight;
+      kerning = (100 * scale) + fontWeight;
       shape(shape, x, y);
     }
   }
-  
+
 
 
   text(index, 20, 100);
@@ -126,6 +132,11 @@ void draw() {
   fill(0);
   text(temp + "°C", (width-200), (height-50));
   text(BPM + " BPM", (width-100), (height-50));    // print the Beats Per Minute
+
+  if (record) {
+    endRecord();
+    record = false;
+  }
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -169,6 +180,8 @@ PShape loadCharShape(char c) {
   String cs = ""+c;
   // handle special cases like ' ', @, #, $, *
   if (cs.equals(" ")) cs = "space";
+  if (cs.equals(",")) cs = ","; 
+  if (cs.equals("A")) cs = "AA";
 
   String file = cs+".svg";
   String dataFolder = "../MadFontData/Alfabet SVG V/";
@@ -183,7 +196,7 @@ PShape loadCharShape(char c) {
 PShape shape_modifier1(PShape original) {
 
   float heartBeatY = map(BPM, 60, 200, 300, 75);
-  float tempX = map(temp, 25, 35, 20, -20);
+  float tempX = map(temp, 25, 30, 20, -20);
 
   if (USE_ARDUINO) {
     original.width = original.width * scale; //- (tempX);
@@ -216,10 +229,10 @@ PShape shape_modifier1(PShape original) {
       //}
     } else {
       if (result.y < (500 * scale)) {
-        result.y = result.y + (mouseY-800);
+        result.y = result.y + (mouseY-300);
       }
       if (result.x < (150*scale)) {
-        result.x = result.x + (mouseX-800);
+        result.x = result.x + (mouseX-300);
       }
     }
 
@@ -262,7 +275,7 @@ void update_cursor_position() {
   if (last_modified_shape != null) {
     cursor_x += last_modified_shape.getWidth() + kerning;
     //println("width" +last_modified_shape.getWidth());
-    if (cursor_x + 0 > (width-200)) {
+    if (cursor_x + 0 > (width-100)) {
       cursor_x = 50;
       cursor_y += 750 * scale;
     }
@@ -415,3 +428,7 @@ void serialEvent(Serial port) {
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+void mousePressed(){
+ record = true; 
+}
