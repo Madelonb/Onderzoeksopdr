@@ -6,6 +6,8 @@ import processing.pdf.*;
 final static boolean USE_ARDUINO = true;
 final boolean DEBUG = true;
 final boolean PULSE = false;
+float scale = 0.03;
+
 
 boolean record; 
 
@@ -21,6 +23,7 @@ PShape[] modified_shapes = new PShape[MAX_SIZE];
 float[] x_positions = new float[MAX_SIZE];
 float[] y_positions = new float[MAX_SIZE];
 float[] values_pressure_sensor = new float [MAX_SIZE];
+//float[] values_type_time = new float [MAX_SIZE];
 
 float charWidth;
 
@@ -39,8 +42,7 @@ int timer = millis();
 
 float key_pressed_time;
 
-float scale = 0.1;
-float kerning = 100;
+float kerning = 80;
 
 //Arduino
 
@@ -107,7 +109,7 @@ void draw() {
     y_positions[index] = cursor_y;
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     //line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, (cursor_y+200) * scale);
-
+    //values_type_time[index] = time_diff;
 
     //display
     //shape(modified_shape, cursor_x, cursor_y);
@@ -124,6 +126,7 @@ void draw() {
 
 
 
+
     for (int i = 0; i <= index; i++) {
       //force = random(0, 1024);
       PShape shape = modified_shapes[i];
@@ -131,6 +134,7 @@ void draw() {
       float x = x_positions[i];
       float y = y_positions[i];
       float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 10, 100)) * scale;
+      //float fontWeight = (map(constrain(values_type_time[i], 100, 1500), 100, 1500, 15, 50)) * scale;
       strokeWeight(fontWeight);
       kerning = (100 * scale) + fontWeight;
       shape(shape, x, y);
@@ -175,6 +179,12 @@ void keyPressed() {
     update_cursor_position();
     time_diff = millis() - last_millis;
     last_millis = millis();
+  } else if (key == BACKSPACE) {
+    cursor_x -= last_modified_shape.getWidth() + kerning;
+    index--;
+  } else if (key == ENTER) {
+    cursor_x = 50;
+    cursor_y += 750 * scale;
   }
 }
 
@@ -199,8 +209,8 @@ PShape loadCharShape(char c) {
   if (cs.equals("?")) cs = "questionmark";
   if (cs.equals("!")) cs = "exclamationmark";
   if (cs.toUpperCase().equals(cs)) cs = cs + cs;
-  
-  
+
+
 
 
   String file = cs+".svg";
@@ -220,16 +230,16 @@ PShape shape_modifier1(PShape original) {
 
 
   if (PULSE) {
-    heartBeatY = map(bpm, 60, 80, -10, 10);
-    tempX = map(temp, 25, 30, 20, -20);
+    heartBeatY = map(bpm, 60, 80, -100 * scale, 100 * scale);
+    tempX = map(temp, 25, 35, 50 * scale, -50 * scale);
   } else {
-    heartBeatY = map(constrain(bpmSimulator, 60, 100), 60, 80, -10, 10);
-    tempX = map(temp, 25, 30, 20, -20);
+    heartBeatY = map(constrain(bpmSimulator, 60, 100), 60, 80, -100 * scale, 100 * scale);
+    tempX = map(temp, 25, 30, 50 * scale, -50 * scale);
   }
 
 
   if (USE_ARDUINO) {
-    original.width = original.width * scale; //- (tempX);
+    original.width = original.width * scale - (tempX);
     original.width *= key_pressed_time/100;
   } else {
     original.width = original.width * scale + (mouseX-300);
