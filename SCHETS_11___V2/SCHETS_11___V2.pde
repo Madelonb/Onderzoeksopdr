@@ -5,6 +5,7 @@ import processing.pdf.*;
 
 final static boolean USE_ARDUINO = true;
 final boolean DEBUG = true;
+final boolean PULSE = false;
 
 boolean record; 
 
@@ -34,7 +35,8 @@ PGraphics pg_blob;
 
 int time_diff;
 int last_millis;
-;
+int timer = millis();
+
 float key_pressed_time;
 
 float scale = 0.1;
@@ -54,11 +56,12 @@ int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
 float force = 10;
 float fontWeight;
+int BPMsimulator = 70;
 
 void setup() {
   size(474, 672);
-  theBlobDetection = new BlobDetection(1200, 800);
-  pg_blob = createGraphics(1200, 800);
+  theBlobDetection = new BlobDetection(100, 200);
+  pg_blob = createGraphics(100, 200);
 
   if (USE_ARDUINO) {
     println(Serial.list());    // print a list of available serial ports
@@ -80,7 +83,18 @@ void draw() {
   background(255);
   fill(0);
 
-  println("force" +force);
+  //println("force" +force);
+
+
+
+
+  if (millis() > timer + 1000) {
+    BPMsimulator = int(constrain(BPMsimulator + random(-3, 3), 70, 120));
+    //println(BPMsimulator);
+    timer = millis();
+  }
+
+  //println("BPMs" + BPMsimulator);
 
   if (has_typed_something()) {
     String s = new String(subset(typed_chars, 0, index+1));
@@ -134,7 +148,11 @@ void draw() {
   // PRINT THE DATA AND VARIABLE VALUES
   fill(0);
   text(temp + "°C", (width-200), (height-50));
+  if (PULSE){
   text(BPM + " BPM", (width-100), (height-50));    // print the Beats Per Minute
+  } else {
+  text(BPMsimulator + " BPM", (width-100), (height-50));    // print the Beats Per Minute
+  }
 
   if (record) {
     endRecord();
@@ -159,12 +177,9 @@ void keyPressed() {
     index++;
     typed_chars[index] = key;
     update_cursor_position();
+    time_diff = millis() - last_millis;
+    last_millis = millis();
   }
-
-
-
-  time_diff = millis() - last_millis;
-  last_millis = millis();
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -184,7 +199,8 @@ PShape loadCharShape(char c) {
   // handle special cases like ' ', @, #, $, *
   if (cs.equals(" ")) cs = "space";
   if (cs.equals(".")) cs = "punt"; 
-  if (cs.equals("A")) cs = "AA";
+  if (cs.toUpperCase().equals(cs)) cs = cs + cs;
+
 
   String file = cs+".svg";
   String dataFolder = "../MadFontData/Alfabet SVG V/";
@@ -198,8 +214,18 @@ PShape loadCharShape(char c) {
 
 PShape shape_modifier1(PShape original) {
 
-  float heartBeatY = map(BPM, 60, 200, 300, 75);
-  float tempX = map(temp, 25, 30, 20, -20);
+  float heartBeatY;
+  float tempX;
+
+
+  if (PULSE) {
+    heartBeatY = map(BPM, 60, 80, -10, 10);
+    tempX = map(temp, 25, 30, 20, -20);
+  } else {
+    heartBeatY = map(constrain(BPMsimulator, 60, 100), 60, 80, -10, 10);
+    tempX = map(temp, 25, 30, 20, -20);
+  }
+
 
   if (USE_ARDUINO) {
     original.width = original.width * scale; //- (tempX);
@@ -217,14 +243,13 @@ PShape shape_modifier1(PShape original) {
     result.y = result.y *scale;
 
 
-
     if (USE_ARDUINO) {
       if (result.y < (500 * scale)) {
         //if (result.x < 100) {
-        //result.y = result.y + (heartBeatY-300);
-        result.y = result.y + (tempX);
+        result.y = result.y - (heartBeatY);
+        //result.y = result.y + (tempX);
         //result.y = result.y + (mouseY-300);
-        //result.x = result.x - (tempX);
+        result.x = result.x - (tempX);
       }
 
       //italic:
@@ -304,7 +329,7 @@ void export() {
       // draw on PGraphics
       pg_blob.beginDraw();
       pg_blob.background(255);
-      pg_blob.shape(modified_shape);
+      pg_blob.shape(modified_shape, 10, 10);
       pg_blob.endDraw();
 
       pg_blob.save("../debug/blob/"+c+".png");
@@ -431,18 +456,19 @@ void serialEvent(Serial port) {
       }
 
 
-        //println(BPM);
-
-      }
-    }
-
-    catch(RuntimeException e) {
-      e.printStackTrace();
+      //println(BPM);
     }
   }
 
-  // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-  void mousePressed() {
-    record = true;
+  catch(RuntimeException e) {
+    e.printStackTrace();
   }
+}
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+void mousePressed() {
+  record = true;
+}
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
