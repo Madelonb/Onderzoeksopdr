@@ -3,7 +3,7 @@ import fontastic.*;
 import processing.serial.*;
 import processing.pdf.*;
 
-final static boolean USE_ARDUINO = false;
+final static boolean USE_ARDUINO = true;
 final boolean DEBUG = true;
 
 boolean record; 
@@ -12,7 +12,7 @@ final int MAX_SIZE = 1024;
 Serial port;
 
 
-char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ',', '!', '.', '?'};
 
 int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
@@ -46,7 +46,7 @@ float kerning = 100;
 
 int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
 int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
-int BPM = 60;         // HOLDS HEART RATE VALUE FROM ARDUINO
+float BPM;         // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
 float temp;
@@ -63,7 +63,7 @@ void setup() {
   if (USE_ARDUINO) {
     println(Serial.list());    // print a list of available serial ports
     // choose the number between the [] that is connected to the Arduino
-    port = new Serial(this, Serial.list()[4], 9600    );  // make sure Arduino is talking serial at this baud rate
+    port = new Serial(this, Serial.list()[4], 115200    );  // make sure Arduino is talking serial at this baud rate
     port.clear();            // flush buffer
     port.bufferUntil('\n');  // set buffer full flag on receipt of carriage return
     portFail = 0;
@@ -183,7 +183,7 @@ PShape loadCharShape(char c) {
   String cs = ""+c;
   // handle special cases like ' ', @, #, $, *
   if (cs.equals(" ")) cs = "space";
-  if (cs.equals(",")) cs = ","; 
+  if (cs.equals(".")) cs = "punt"; 
   if (cs.equals("A")) cs = "AA";
 
   String file = cs+".svg";
@@ -306,7 +306,7 @@ void export() {
       pg_blob.background(255);
       pg_blob.shape(modified_shape);
       pg_blob.endDraw();
-      
+
       pg_blob.save("../debug/blob/"+c+".png");
 
       image(pg_blob, 0, 0, width, height);
@@ -415,25 +415,34 @@ void serialEvent(Serial port) {
 
       //list = float(splitTokens(inString, ", \t"));
       list = float(split(inString, ','));
-      //println("list[0]" +list[0]);
-      //println("list[1]" +list[1]);
 
-      temp = list[0];
-      if (list[1] > 50) {
-        force = list[1];
+      if (list.length == 3) {
+
+        temp = list[0];
+        if (list[1] > 50) {
+          force = list[1];
+        }
+        BPM = list[2];
+      } else {
+        temp = list[0];
+        if (list[1] > 50) {
+          force = list[1];
+        }
       }
 
-      //force = Float.parseFloat(list[0]);
+
+        //println(BPM);
+
+      }
+    }
+
+    catch(RuntimeException e) {
+      e.printStackTrace();
     }
   }
 
-  catch(RuntimeException e) {
-    e.printStackTrace();
+  // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+  void mousePressed() {
+    record = true;
   }
-}
-
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-void mousePressed(){
- record = true; 
-}
