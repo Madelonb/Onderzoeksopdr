@@ -44,11 +44,7 @@ float kerning = 100;
 
 //Arduino
 
-
-
-int Sensor;      // HOLDS PULSE SENSOR DATA FROM ARDUINO
-int IBI;         // HOLDS TIME BETWEN HEARTBEATS FROM ARDUINO
-float BPM;         // HOLDS HEART RATE VALUE FROM ARDUINO
+float bpm;       // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
 float temp;
@@ -56,7 +52,7 @@ int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
 float force = 10;
 float fontWeight;
-int BPMsimulator = 70;
+int bpmSimulator = 70;
 
 void setup() {
   size(474, 672);
@@ -89,12 +85,12 @@ void draw() {
 
 
   if (millis() > timer + 1000) {
-    BPMsimulator = int(constrain(BPMsimulator + random(-3, 3), 70, 120));
-    //println(BPMsimulator);
+    bpmSimulator = int(constrain(bpmSimulator + random(-3, 3), 70, 120));
+    //println(bpmSimulator);
     timer = millis();
   }
 
-  //println("BPMs" + BPMsimulator);
+  //println("BPMs" + bpmSimulator);
 
   if (has_typed_something()) {
     String s = new String(subset(typed_chars, 0, index+1));
@@ -148,10 +144,10 @@ void draw() {
   // PRINT THE DATA AND VARIABLE VALUES
   fill(0);
   text(temp + "°C", (width-200), (height-50));
-  if (PULSE){
-  text(BPM + " BPM", (width-100), (height-50));    // print the Beats Per Minute
+  if (PULSE) {
+    text(bpm + " BPM", (width-100), (height-50));    // print the Beats Per Minute
   } else {
-  text(BPMsimulator + " BPM", (width-100), (height-50));    // print the Beats Per Minute
+    text(bpmSimulator + " BPM", (width-100), (height-50));    // print the Beats Per Minute
   }
 
   if (record) {
@@ -198,8 +194,13 @@ PShape loadCharShape(char c) {
   String cs = ""+c;
   // handle special cases like ' ', @, #, $, *
   if (cs.equals(" ")) cs = "space";
-  if (cs.equals(".")) cs = "punt"; 
+  if (cs.equals(".")) cs = "dot"; 
+  if (cs.equals(",")) cs = "comma";
+  if (cs.equals("?")) cs = "questionmark";
+  if (cs.equals("!")) cs = "exclamationmark";
   if (cs.toUpperCase().equals(cs)) cs = cs + cs;
+  
+  
 
 
   String file = cs+".svg";
@@ -219,10 +220,10 @@ PShape shape_modifier1(PShape original) {
 
 
   if (PULSE) {
-    heartBeatY = map(BPM, 60, 80, -10, 10);
+    heartBeatY = map(bpm, 60, 80, -10, 10);
     tempX = map(temp, 25, 30, 20, -20);
   } else {
-    heartBeatY = map(constrain(BPMsimulator, 60, 100), 60, 80, -10, 10);
+    heartBeatY = map(constrain(bpmSimulator, 60, 100), 60, 80, -10, 10);
     tempX = map(temp, 25, 30, 20, -20);
   }
 
@@ -447,7 +448,7 @@ void serialEvent(Serial port) {
         if (list[1] > 50) {
           force = list[1];
         }
-        BPM = list[2];
+        bpm = list[2];
       } else {
         temp = list[0];
         if (list[1] > 50) {
@@ -456,7 +457,7 @@ void serialEvent(Serial port) {
       }
 
 
-      //println(BPM);
+      //println(bpm);
     }
   }
 
