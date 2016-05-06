@@ -5,8 +5,10 @@ import processing.pdf.*;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-final boolean PULSE = false;
+boolean simulate_bpm = true;
 float scale = 0.03;
+
+float plot_x1, plot_y1, plot_x2, plot_y2;
 
 
 boolean record; 
@@ -29,10 +31,12 @@ float charWidth;
 
 float cursor_x = 50;
 float cursor_y = 50;
+float cursor_start_x = 50;
+float cursor_start_y = 50;
 
 Fontastic f;
 BlobDetection theBlobDetection;
-PShape last_modified_shape;
+PShape current_modified_shape;
 PGraphics pg_blob;
 
 
@@ -40,12 +44,12 @@ int time_diff;
 int last_millis;
 int timer = millis();
 
-float key_pressed_time;
+float key_timediff_map;
 float kerning = 0;
 
 //Arduino
 
-float bpm;       // HOLDS HEART RATE VALUE FROM ARDUINO
+float bpm = 120;       // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
 float temp;
@@ -53,10 +57,14 @@ int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
 float force = 300;
 float fontWeight;
-int bpmSimulator = 120;
 
 void setup() {
   size(650, 950);
+  plot_x1 = 50;
+  plot_y1 = 50;
+  plot_x2 = width-plot_x1;
+  plot_y2 = height-plot_y1;
+
   theBlobDetection = new BlobDetection(100, 200);
   pg_blob = createGraphics(100, 200);
 
@@ -80,41 +88,58 @@ void draw() {
   background(255);
   fill(0);
 
-  //println("force" +force);
 
+  if (simulate_bpm) {
+    if (millis() > timer + 1000) {
 
-
-
-  if (millis() > timer + 1000) {
-
-    if (bpmSimulator < 70) {
-      bpmSimulator = int(constrain(bpmSimulator + random(0, 3), 60, 120));
-    } else {
-      bpmSimulator = int(constrain(bpmSimulator + random(-3, 1), 60, 120));
+      if (bpm < 70) {
+        bpm = (constrain(bpm + random(0, 3), 60, 120));
+      } else {
+        bpm = (constrain(bpm + random(-3, 1), 60, 120));
+      }
+      timer = millis();
     }
-    println("bpm " + bpmSimulator);
-    timer = millis();
   }
+  
+  println("bpm" + bpm);
 
 
-
-
-  //println("BPMs" + bpmSimulator);
 
   if (has_typed_something()) {
     String s = new String(subset(typed_chars, 0, index+1));
     //text(s, 20, 20);
-
     // we want to edit the last character typed
     char c = typed_chars[index];
     PShape shape = loadCharShape(c);
     PShape modified_shape = shape_modifier1(shape);
-    last_modified_shape = modified_shape;
+    current_modified_shape = modified_shape;
     modified_shapes[index] = modified_shape;
     // do this elsewhere?
+
+    // set xy position
+    if (index-1 >= 0) {
+      cursor_x = x_positions[index-1]+abs(modified_shapes[index-1].getWidth()) + kerning;
+      cursor_y = y_positions[index-1];
+      if (cursor_x + current_modified_shape.getWidth() > plot_x2 || key == ENTER) {
+        cursor_x = plot_x1;
+        cursor_y += 850 * scale;
+      }
+      x_positions[index] = cursor_x;
+      y_positions[index] = cursor_y;
+    } else {
+      x_positions[index] = cursor_start_x;
+      y_positions[index] = cursor_start_y;
+    }
+
+
+
     x_positions[index] = cursor_x;
     y_positions[index] = cursor_y;
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
+
+
+
+
     //line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, (cursor_y+200) * scale);
     //values_type_time[index] = time_diff;
 
@@ -154,12 +179,10 @@ void draw() {
 
   // PRINT THE DATA AND VARIABLE VALUES
   fill(0);
-  text(temp + "°C", (width-200), (height-50));
-  if (PULSE) {
-    text(bpm + " BPM", (width-100), (height-50));    // print the Beats Per Minute
-  } else {
-    text(bpmSimulator + " BPM", (width-100), (height-50));    // print the Beats Per Minute
-  }
+  text(temp + "°C", (width-200), plot_y2);
+  //text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
+  text("BPM "+((int) bpm), (width-100), plot_y2);
+
 
   if (record) {
     endRecord();
@@ -183,16 +206,16 @@ void keyPressed() {
   } else if (char_ok(key)) {
     index++;
     typed_chars[index] = key;
-    update_cursor_position();
+    //update_cursor_position();
     time_diff = millis() - last_millis;
     last_millis = millis();
   } else if (key == BACKSPACE) {
-    cursor_x -= last_modified_shape.getWidth() + kerning;
+    cursor_x -= current_modified_shape.getWidth() + kerning;
     index--;
-  } else if (key == ENTER) {
-    cursor_x = 50;
-    cursor_y += 750 * scale;
-  }
+  } //else if (key == ENTER) {
+  //  cursor_x = plot_x1;
+  //  cursor_y += 850 * scale;
+  //}
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -230,74 +253,65 @@ PShape loadCharShape(char c) {
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-PShape shape_modifier1(PShape original) {
+PShape shape_modifier1(PShape shape) {
 
   float heartBeatY;
   float tempX;
 
 
-  if (PULSE) {
-    heartBeatY = map(constrain(bpm, 50, 120), 60, 100, 0, 400);
-    tempX = map(temp, 25, 35, -1, 1);
-  } else {
-    heartBeatY = map(constrain(bpmSimulator, 50, 120), 50, 120, 60, 200);
-    tempX = map(temp, 25, 35, -1, 1);
-    //tempX = 0;
-  }
+
+  heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 60, 200);
+  tempX = map(temp, 25, 35, -1, 1);
+  key_timediff_map = map(constrain(time_diff, 20, 1000), 20, 1500, 0.6, 2);
+
+  //tempX = 0;
 
 
   if (USE_ARDUINO) {
-    original.width = original.width * scale;
-    original.width *= key_pressed_time;
+    shape.width = abs(shape.width * scale);
+    shape.width *= abs(key_timediff_map);
   } else {
-    original.width = original.width * scale; //+ (mouseX-300);
-    original.width *= key_pressed_time;
+    shape.width = abs(shape.width * scale); //+ (mouseX-300);
+    shape.width *= abs(key_timediff_map);
+    println("width " + shape.width);
   }
 
+  //println("o width" + shape.width);
 
-  for (int i = 0; i < original.getVertexCount(); i++) {
-    PVector result = original.getVertex(i);
+
+  for (int i = 0; i < shape.getVertexCount(); i++) {
+    PVector result = shape.getVertex(i);
 
     result.x = result.x *scale;
     result.y = result.y *scale;
 
 
     if (USE_ARDUINO) {
-      //if (result.y < (500 * scale)) {
       result.y = (result.y * heartBeatY/100) - (heartBeatY/6);
+      ////italic
       //result.x = result.x - (result.y*tempX);
-      //italic:
-      //result.x = result.x - result.y;
-      //}
+      
     } else {
       result.y = (result.y * mouseY/100) - mouseY/6;
-      //if (result.y < -10) {
-        //result.x = result.x + mouseX-300;
-        //result.x = result.x - (result.y / (mouseX/6));
+      ////italic
+      //result.x = result.x - (result.y / (mouseX/6));
 
-        //if (result.x < (150*scale)) {
-        //  result.x = result.x + (mouseX-300);
-      //}
     }
-
-    //println("y" + result.y);
-
-    key_pressed_time = map(constrain(time_diff, 20, 1000), 20, 1500, 0.6, 2);
-    result.x = result.x * key_pressed_time;
+    
+    result.x = result.x * key_timediff_map;
 
 
 
-
-    original.setVertex(i, result.x, result.y);
+    shape.setVertex(i, result.x, result.y);
   }
 
-  if (original.getChildCount() > 0) {
-    for (int j = 0; j < original.getChildCount(); j++) {
-      shape_modifier1(original.getChild(j));
+  if (shape.getChildCount() > 0) {
+    for (int j = 0; j < shape.getChildCount(); j++) {
+      shape_modifier1(shape.getChild(j));
     }
   }
 
-  return original;
+  return shape;
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -309,16 +323,16 @@ boolean has_typed_something() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 
-void update_cursor_position() {
-  if (last_modified_shape != null) {
-    cursor_x += last_modified_shape.getWidth() + kerning;
-    //println("width" +last_modified_shape.getWidth());
-    if (cursor_x + 0 > (width-100)) {
-      cursor_x = 50;
-      cursor_y += 850 * scale;
-    }
-  }
-}
+//void update_cursor_position() {
+//  if (current_modified_shape != null) {
+//    cursor_x += current_modified_shape.getWidth() + kerning;
+//    println("width" +current_modified_shape.getWidth());
+//    if (cursor_x + 0 > (width-100)) {
+//      cursor_x = 50;
+//      cursor_y += 850 * scale;
+//    }
+//  }
+//}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -436,9 +450,13 @@ PVector[] blob_to_PVector_array(Blob the_blob) {
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-float[] list = new float[2]; 
 
 void serialEvent(Serial port) {
+
+  float[] list = new float[2]; 
+  int TEMP = 0;
+  int FORCE = 1;
+  int BPM = 2;
 
   try {
     String inString = port.readString();
@@ -453,15 +471,17 @@ void serialEvent(Serial port) {
 
       if (list.length == 3) {
 
-        temp = list[0];
-        if (list[1] > 50) {
-          force = list[1];
+        temp = list[TEMP];
+        if (list[FORCE] > 50) {
+          force = list[FORCE];
         }
-        bpm = list[2];
+        if (simulate_bpm == false) {
+          bpm = list[BPM];
+        }
       } else {
-        temp = list[0];
-        if (list[1] > 50) {
-          force = list[1];
+        temp = list[TEMP];
+        if (list[FORCE] > 50) {
+          force = list[FORCE];
         }
       }
 
