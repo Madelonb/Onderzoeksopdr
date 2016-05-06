@@ -3,7 +3,7 @@ import fontastic.*;
 import processing.serial.*;
 import processing.pdf.*;
 
-final static boolean USE_ARDUINO = true;
+final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
 final boolean PULSE = false;
 float scale = 0.03;
@@ -11,11 +11,11 @@ float scale = 0.03;
 
 boolean record; 
 
-final int MAX_SIZE = 1024;
+final int MAX_SIZE = 2048;
 Serial port;
 
 
-char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ',', '!', '.', '?'};
+char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?'};
 
 int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
@@ -41,8 +41,7 @@ int last_millis;
 int timer = millis();
 
 float key_pressed_time;
-
-float kerning = 80;
+float kerning = 0;
 
 //Arduino
 
@@ -52,12 +51,12 @@ int readFail = 1;
 float temp;
 int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
-float force = 10;
+float force = 300;
 float fontWeight;
-int bpmSimulator = 70;
+int bpmSimulator = 120;
 
 void setup() {
-  size(474, 672);
+  size(650, 950);
   theBlobDetection = new BlobDetection(100, 200);
   pg_blob = createGraphics(100, 200);
 
@@ -87,10 +86,18 @@ void draw() {
 
 
   if (millis() > timer + 1000) {
-    bpmSimulator = int(constrain(bpmSimulator + random(-3, 3), 70, 120));
-    //println(bpmSimulator);
+
+    if (bpmSimulator < 70) {
+      bpmSimulator = int(constrain(bpmSimulator + random(0, 3), 60, 120));
+    } else {
+      bpmSimulator = int(constrain(bpmSimulator + random(-3, 1), 60, 120));
+    }
+    println("bpm " + bpmSimulator);
     timer = millis();
   }
+
+
+
 
   //println("BPMs" + bpmSimulator);
 
@@ -136,14 +143,14 @@ void draw() {
       float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 10, 100)) * scale;
       //float fontWeight = (map(constrain(values_type_time[i], 100, 1500), 100, 1500, 15, 50)) * scale;
       strokeWeight(fontWeight);
-      kerning = (100 * scale) + fontWeight;
+      kerning = (70 * scale) + fontWeight;
       shape(shape, x, y);
     }
   }
 
 
 
-  text(index, 20, 100);
+  //text(index, 20, 100);
 
   // PRINT THE DATA AND VARIABLE VALUES
   fill(0);
@@ -230,20 +237,21 @@ PShape shape_modifier1(PShape original) {
 
 
   if (PULSE) {
-    heartBeatY = map(bpm, 60, 80, -100 * scale, 100 * scale);
-    tempX = map(temp, 25, 35, 50 * scale, -50 * scale);
+    heartBeatY = map(constrain(bpm, 50, 120), 60, 100, 0, 400);
+    tempX = map(temp, 25, 35, -1, 1);
   } else {
-    heartBeatY = map(constrain(bpmSimulator, 60, 100), 60, 80, -100 * scale, 100 * scale);
-    tempX = map(temp, 25, 30, 50 * scale, -50 * scale);
+    heartBeatY = map(constrain(bpmSimulator, 50, 120), 50, 120, 60, 200);
+    tempX = map(temp, 25, 35, -1, 1);
+    //tempX = 0;
   }
 
 
   if (USE_ARDUINO) {
-    original.width = original.width * scale - (tempX);
-    original.width *= key_pressed_time/100;
+    original.width = original.width * scale;
+    original.width *= key_pressed_time;
   } else {
-    original.width = original.width * scale + (mouseX-300);
-    original.width *= key_pressed_time/100;
+    original.width = original.width * scale; //+ (mouseX-300);
+    original.width *= key_pressed_time;
   }
 
 
@@ -255,39 +263,30 @@ PShape shape_modifier1(PShape original) {
 
 
     if (USE_ARDUINO) {
-      if (result.y < (500 * scale)) {
-        //if (result.x < 100) {
-        result.y = result.y - (heartBeatY);
-        //result.y = result.y + (tempX);
-        //result.y = result.y + (mouseY-300);
-        result.x = result.x - (tempX);
-      }
-
+      //if (result.y < (500 * scale)) {
+      result.y = (result.y * heartBeatY/100) - (heartBeatY/6);
+      //result.x = result.x - (result.y*tempX);
       //italic:
       //result.x = result.x - result.y;
       //}
     } else {
-      if (result.y < (500 * scale)) {
-        result.y = result.y + (mouseY-300);
-      }
-      if (result.x < (150*scale)) {
-        result.x = result.x + (mouseX-300);
-      }
+      result.y = (result.y * mouseY/100) - mouseY/6;
+      //if (result.y < -10) {
+        //result.x = result.x + mouseX-300;
+        //result.x = result.x - (result.y / (mouseX/6));
+
+        //if (result.x < (150*scale)) {
+        //  result.x = result.x + (mouseX-300);
+      //}
     }
 
-    //if (result.y < 110) {
-    //   //if (result.x < 100) {
-    //     result.y = result.y + (mouseY-300);
-    //     //result.y = result.y + (mouseY-300);
-    //     result.x = result.x + (mouseX-300);
-    //     //result.x = result.x + ((mouseX + result.x)-800);
-    //   }
-    // //}
+    //println("y" + result.y);
 
-    key_pressed_time = map(constrain(time_diff, 100, 1500), 100, 1500, 75, 200);
-    result.x = result.x * key_pressed_time/100;
+    key_pressed_time = map(constrain(time_diff, 20, 1000), 20, 1500, 0.6, 2);
+    result.x = result.x * key_pressed_time;
 
-    //println("key" +time_diff);
+
+
 
     original.setVertex(i, result.x, result.y);
   }
@@ -316,7 +315,7 @@ void update_cursor_position() {
     //println("width" +last_modified_shape.getWidth());
     if (cursor_x + 0 > (width-100)) {
       cursor_x = 50;
-      cursor_y += 750 * scale;
+      cursor_y += 850 * scale;
     }
   }
 }
