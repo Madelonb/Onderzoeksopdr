@@ -17,7 +17,7 @@ final int MAX_SIZE = 2048;
 Serial port;
 
 
-char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?'};
+char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n'};
 
 int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
@@ -32,7 +32,7 @@ float charWidth;
 float cursor_x = 50;
 float cursor_y = 50;
 float cursor_start_x = 50;
-float cursor_start_y = 50;
+float cursor_start_y = 100;
 
 Fontastic f;
 BlobDetection theBlobDetection;
@@ -100,7 +100,7 @@ void draw() {
       timer = millis();
     }
   }
-  
+
   println("bpm" + bpm);
 
 
@@ -110,78 +110,101 @@ void draw() {
     //text(s, 20, 20);
     // we want to edit the last character typed
     char c = typed_chars[index];
-    PShape shape = loadCharShape(c);
-    PShape modified_shape = shape_modifier1(shape);
-    current_modified_shape = modified_shape;
-    modified_shapes[index] = modified_shape;
-    // do this elsewhere?
 
-    // set xy position
-    if (index-1 >= 0) {
-      cursor_x = x_positions[index-1]+abs(modified_shapes[index-1].getWidth()) + kerning;
-      cursor_y = y_positions[index-1];
-      if (cursor_x + current_modified_shape.getWidth() > plot_x2 || key == ENTER) {
-        cursor_x = plot_x1;
-        cursor_y += 850 * scale;
+    if (c == '\n') {
+      cursor_x = plot_x1;
+      if (index >=  1) {
+        cursor_y = y_positions[index-1] + (850 * scale);
+      } else {
+        cursor_y = cursor_start_y + (850 * scale);
       }
-      x_positions[index] = cursor_x;
-      y_positions[index] = cursor_y;
+      modified_shapes[index] = null;
     } else {
-      x_positions[index] = cursor_start_x;
-      y_positions[index] = cursor_start_y;
+
+      PShape shape = loadCharShape(c);
+      shape_modifier1(shape);
+      current_modified_shape = shape;
+      modified_shapes[index] = shape;
+
+      // set xy position
+      if (index == 0) {
+        cursor_x = cursor_start_x;
+        cursor_y = cursor_start_y;
+      } else {
+
+        char last_c = typed_chars[index-1];
+        if (last_c == '\n') {
+          cursor_x = cursor_start_x;
+          cursor_y = y_positions[index-1] + (850 * scale);
+        } else {
+          cursor_x = x_positions[index-1]+abs(modified_shapes[index-1].getWidth()) + kerning;
+          cursor_y = y_positions[index-1];
+          if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
+            cursor_x = plot_x1;
+            cursor_y += 850 * scale;
+          }
+          x_positions[index] = cursor_x;
+          y_positions[index] = cursor_y;
+        }
+      }
     }
 
 
-
+    values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     x_positions[index] = cursor_x;
     y_positions[index] = cursor_y;
-    values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
-
-
-
-
-    //line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, (cursor_y+200) * scale);
-    //values_type_time[index] = time_diff;
-
-    //display
-    //shape(modified_shape, cursor_x, cursor_y);
   }
+
+
+
+  //line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, (cursor_y+200) * scale);
+  //values_type_time[index] = time_diff;
+
+  //display
+  //shape(modified_shape, cursor_x, cursor_y);
+  //}
 
   // display
-  {
+  //{
 
-    stroke(0);
-    //strokeWeight(10);
-    strokeCap(SQUARE);
-    strokeJoin(BEVEL);
-    noFill();
-
-
+  stroke(0);
+  //strokeWeight(10);
+  strokeCap(SQUARE);
+  strokeJoin(BEVEL);
+  noFill();
 
 
-    for (int i = 0; i <= index; i++) {
-      //force = random(0, 1024);
-      PShape shape = modified_shapes[i];
-      shape.disableStyle();
-      float x = x_positions[i];
-      float y = y_positions[i];
-      float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 10, 100)) * scale;
-      //float fontWeight = (map(constrain(values_type_time[i], 100, 1500), 100, 1500, 15, 50)) * scale;
-      strokeWeight(fontWeight);
-      kerning = (70 * scale) + fontWeight;
-      shape(shape, x, y);
+
+
+  for (int i = 0; i <= index; i++) {
+
+    char c = typed_chars[i];
+    if (c == '\n') {
+      continue;
     }
+
+    PShape shape = modified_shapes[i];
+    shape.disableStyle();
+    float x = x_positions[i];
+    float y = y_positions[i];
+    float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 10, 100)) * scale;
+    //float fontWeight = (map(constrain(values_type_time[i], 100, 1500), 100, 1500, 15, 50)) * scale;
+    strokeWeight(fontWeight);
+    kerning = (70 * scale) + fontWeight;
+    shape(shape, x, y);
   }
+  //}
 
 
 
-  //text(index, 20, 100);
+  text(index, 20, 100);
 
   // PRINT THE DATA AND VARIABLE VALUES
+  textAlign(LEFT, BOTTOM);
   fill(0);
-  text(temp + "°C", (width-200), plot_y2);
+  text(temp + "°C", lerp(plot_x1, plot_x2, 0.5), plot_y2);
   //text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
-  text("BPM "+((int) bpm), (width-100), plot_y2);
+  text("BPM "+((int) bpm), plot_x2 - textWidth("XXX BPM"), plot_y2);
 
 
   if (record) {
@@ -233,6 +256,7 @@ boolean char_ok(char c) {
 PShape loadCharShape(char c) {
   String cs = ""+c;
   // handle special cases like ' ', @, #, $, *
+  if (c == '\n') return null;
   if (cs.equals(" ")) cs = "space";
   if (cs.equals(".")) cs = "dot"; 
   if (cs.equals(",")) cs = "comma";
@@ -253,7 +277,7 @@ PShape loadCharShape(char c) {
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-PShape shape_modifier1(PShape shape) {
+void shape_modifier1(PShape shape) {
 
   float heartBeatY;
   float tempX;
@@ -290,14 +314,12 @@ PShape shape_modifier1(PShape shape) {
       result.y = (result.y * heartBeatY/100) - (heartBeatY/6);
       ////italic
       //result.x = result.x - (result.y*tempX);
-      
     } else {
       result.y = (result.y * mouseY/100) - mouseY/6;
       ////italic
       //result.x = result.x - (result.y / (mouseX/6));
-
     }
-    
+
     result.x = result.x * key_timediff_map;
 
 
@@ -310,8 +332,6 @@ PShape shape_modifier1(PShape shape) {
       shape_modifier1(shape.getChild(j));
     }
   }
-
-  return shape;
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -349,7 +369,8 @@ void export() {
     for (int i = 0; i < allowed_chars.length; i++) {
       char c = typed_chars[index];
       PShape shape = loadCharShape(c);
-      PShape modified_shape = shape_modifier1(shape);
+      shape_modifier1(shape);
+      PShape modified_shape = shape;
       // draw on PGraphics
       pg_blob.beginDraw();
       pg_blob.background(255);
