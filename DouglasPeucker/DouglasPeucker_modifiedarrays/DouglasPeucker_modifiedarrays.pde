@@ -13,7 +13,10 @@ float[][] points = {
   }
   , {
     50, 177
-  }};
+}};
+
+float [] points_x = {45, 46, 47, 48, 50};
+float [] points_y = {197, 196, 190, 183, 177};
 
 
 ArrayList<PVector> vecs = new ArrayList<PVector>();
@@ -22,7 +25,8 @@ ArrayList<PVector> vecs = new ArrayList<PVector>();
 void setup() {
   size(800, 800);
 
-  println("points: "+points.length);
+  //println("points_x: "+points_x);
+  //println("points_y: "+points_y);
 }
 
 void draw() {
@@ -30,10 +34,15 @@ void draw() {
   noFill();
   stroke(0, 0, 200);
 
+  //beginShape();
+  //for (float[] xy : points) {
+  //  vertex(xy[0], xy[1]);
+  //  println("xy[0] "+xy[0]);
+  //}
+  //endShape();
+
   beginShape();
-  for (float[] xy : points) {
-    vertex(xy[0], xy[1]);
-  }
+  vertex(points_x, points_y);
   endShape();
 
   int start = millis();
@@ -58,23 +67,21 @@ void mousePressed() {
 
 void mouseDragged() {
   vecs.add(new PVector(mouseX, mouseY));
-  
+
   beginShape();
-  for(PVector v : vecs) {
-    vertex(v.x, v.y); 
+  for (PVector v : vecs) {
+    vertex(v.x, v.y);
   }
   endShape();
-  
 }
 
 void mouseReleased() {
   points = new float[vecs.size()][2];
-  
+
   int i = 0;
   for (PVector v : vecs) {
-    points[i++] = new float[] {v.x, v.y}; 
+    points[i++] = new float[] {v.x, v.y};
   }
-  
 }
 
 
@@ -114,10 +121,9 @@ float[][] douglasPeucker(float[][] points, int startIndex, int endIndexInc, floa
     }
 
     return result;
-    
   } else {
-    
-    return new float[][] { {points[startIndex][0], points[startIndex][1] } , { points[endIndexInc][0], points[endIndexInc][1] }};
+
+    return new float[][] { {points[startIndex][0], points[startIndex][1] }, { points[endIndexInc][0], points[endIndexInc][1] }};
   }
 }
 
