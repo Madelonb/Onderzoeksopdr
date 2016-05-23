@@ -1,7 +1,8 @@
-import blobDetection.*;
+//import blobDetection.*;
 import fontastic.*;
 import processing.serial.*;
 import processing.pdf.*;
+import com.github.lemmingswalker.*;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
@@ -36,7 +37,7 @@ float cursor_start_x = 50;
 float cursor_start_y = 100;
 
 Fontastic f;
-BlobDetection theBlobDetection;
+//BlobDetection theBlobDetection;
 PShape current_modified_shape;
 PGraphics pg_blob;
 PFont basic;
@@ -62,7 +63,7 @@ float force = 80;
 float fontWeight;
 
 void setup() {
-  size(650, 950);
+  size(650, 650);
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
@@ -71,7 +72,7 @@ void setup() {
 
 
 
-  theBlobDetection = new BlobDetection(1000, 2000);
+  //theBlobDetection = new BlobDetection(1000, 2000);
   pg_blob = createGraphics(1000, 2000);
 
   if (USE_ARDUINO) {
@@ -87,10 +88,16 @@ void setup() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
-  
+
+  if (!USE_ARDUINO) {
+    temp = map(constrain(mouseX, 100, 400), 100, 400, 25, 35);
+    bpm = map(constrain(mouseY, 100, 400), 100, 400, 50, 120);
+    // force
+  }
+
   int X = 0;
   int Y = 1;
-  
+
   if (record) {
     beginRecord(PDF, "frame-####.pdf");
   }
@@ -148,7 +155,7 @@ void draw() {
         } else {
           cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth()) + kerning;
           cursor_y = xy_positions[index-1][Y];
-          
+
           if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
             cursor_x = plot_x1;
             cursor_y += spacing;
@@ -332,24 +339,120 @@ boolean has_typed_something() {
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+//void export() {
+
+//  f = new Fontastic(this, "MadelonFont");
+//  f.setAuthor("Madelon Balk");
+
+//  if (has_typed_something()) {
+//    println("starting export");
+
+
+
+//    for (int i = 0; i < allowed_chars.length; i++) {
+
+
+//      //char c = typed_chars[index];
+//      char c = allowed_chars[i];
+//      // check enter
+
+
+
+//      PShape shape = loadCharShape(c);
+
+//      if (shape == null) {
+//        continue;
+//      }
+
+//      the_shape_modifier(shape);
+//      PShape modified_shape = shape;
+//      // draw on PGraphics
+//      pg_blob.beginDraw();
+//      pg_blob.background(255);
+
+//      if (c == 'a') {
+//        println("shape width: "+modified_shape.width);
+//        println("shape height: "+modified_shape.height);
+//        debug_print(modified_shape);
+//      }
+
+//      //pg_blob.shape(modified_shape, cursor_x ...y);
+//      pg_blob.shape(modified_shape, 0, 0, pg_blob.width, pg_blob.height);
+//      pg_blob.endDraw();
+
+//      pg_blob.save("../debug/blob/"+c+".png");
+//      println(cursor_x, cursor_y);
+
+//      image(pg_blob, 0, 0, width, height);
+
+//      // blobscan
+//      theBlobDetection.setPosDiscrimination(false);
+//      theBlobDetection.setThreshold(0.38f);
+//      theBlobDetection.computeBlobs(pg_blob.pixels);
+
+//      // create glyph
+//      FGlyph glyph = f.addGlyph(c);
+
+//      // blobs to PVector[]
+//      for (int n=0; n<theBlobDetection.getBlobNb(); n++) {
+//        Blob b = theBlobDetection.getBlob(n);
+//        if (b!=null) {
+//          PVector[] vecs = blob_to_PVector_array(b);
+//          for (PVector v : vecs) {
+//            v.x *= pg_blob.width;
+//            v.y *= pg_blob.height;
+//          }
+
+//          // add contour
+//          glyph.addContour(vecs);
+//        }
+//      }
+//    }
+//    // finish exporting font
+
+//    f.buildFont();                                  // Build the font resulting in .ttf and .woff files
+//    // and a HTML template to preview the WOFF
+//    //How to clean up afterwards:
+
+//    f.cleanup();                  // Deletes all the files that doubletype created, except the .ttf and
+//    // .woff files and the HTML template
+//  }
+//}
+
+
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+
+int scan_id = 1;
+
 void export() {
 
   f = new Fontastic(this, "MadelonFont");
   f.setAuthor("Madelon Balk");
 
+  // init BlobDetection
+  ThresholdChecker thresholdChecker = new ThresholdChecker() {
+    public boolean result_of(int c) {
+      //                 green < 128
+      return ((c >> 8) & 0xFF) < 128;
+    }
+  };
+
+  ContourData contour_data = new ContourData();
+  contour_data.edge_indexes = new int[(pg_blob.width*pg_blob.height)/2];
+  contour_data.corner_indexes = new int[(pg_blob.width*pg_blob.height)/2];
+
+  int[] contour_map = new int[pg_blob.width*pg_blob.height];
+
+
   if (has_typed_something()) {
     println("starting export");
 
-
-
     for (int i = 0; i < allowed_chars.length; i++) {
 
-
-      //char c = typed_chars[index];
       char c = allowed_chars[i];
-      // check enter
-
-
 
       PShape shape = loadCharShape(c);
 
@@ -358,49 +461,88 @@ void export() {
       }
 
       the_shape_modifier(shape);
-      PShape modified_shape = shape;
+      final PShape modified_shape = shape;
       // draw on PGraphics
       pg_blob.beginDraw();
       pg_blob.background(255);
 
-      if (c == 'a') {
-        println("shape width: "+modified_shape.width);
-        println("shape height: "+modified_shape.height);
-        debug_print(modified_shape);
-      }
+      //if (c == 'a') {
+      //  println("shape width: "+modified_shape.width);
+      //  println("shape height: "+modified_shape.height);
+      //  debug_print(modified_shape);
+      //}
 
-      //pg_blob.shape(modified_shape, cursor_x ...y);
-      pg_blob.shape(modified_shape, 0, 0, pg_blob.width, pg_blob.height);
+      pg_blob.shape(modified_shape, 10, 10, pg_blob.width-10, pg_blob.height-10);
+
+      // create border for blobscan
+      pg_blob.noFill();
+      pg_blob.stroke(255);
+      pg_blob.strokeWeight(1);
+      pg_blob.rect(0, 0, pg_blob.width-1, pg_blob.height-1);
+
       pg_blob.endDraw();
 
-      pg_blob.save("../debug/blob/"+c+".png");
-      println(cursor_x, cursor_y);
+      if (DEBUG) {
+        pg_blob.save("../debug/blob/"+c+".png");
+      }
 
-      image(pg_blob, 0, 0, width, height);
+      pg_blob.loadPixels();
 
       // blobscan
+      /*
       theBlobDetection.setPosDiscrimination(false);
-      theBlobDetection.setThreshold(0.38f);
-      theBlobDetection.computeBlobs(pg_blob.pixels);
+       theBlobDetection.setThreshold(0.38f);
+       theBlobDetection.computeBlobs(pg_blob.pixels);
+       */
 
-      // create glyph
-      FGlyph glyph = f.addGlyph(c);
 
-      // blobs to PVector[]
-      for (int n=0; n<theBlobDetection.getBlobNb(); n++) {
-        Blob b = theBlobDetection.getBlob(n);
-        if (b!=null) {
-          PVector[] vecs = blob_to_PVector_array(b);
-          for (PVector v : vecs) {
-            v.x *= pg_blob.width;
-            v.y *= pg_blob.height;
+
+      // create the glyph
+      final FGlyph glyph = f.addGlyph(c);
+
+      glyph.setAdvanceWidth((int)modified_shape.width);
+
+      ContourDataProcessor contour_data_processor = new ContourDataProcessor() {
+
+        public boolean process(ContourData contour_data) {
+          //create a contour
+          PVector[] contour = new PVector[contour_data.n_of_corners];
+          for (int i = 0; i < contour_data.n_of_corners; i++) {
+            int index = contour_data.corner_indexes[i];
+            float x = index % pg_blob.width;
+            float y = (index - x) / pg_blob.width;
+            // normalise
+            x /= pg_blob.width;
+            y /= pg_blob.height;
+            y = 1-y; // flip upside down
+
+            x *= modified_shape.width;
+            y *= modified_shape.height;
+
+            contour[i] = new PVector(x, y);
           }
 
-          // add contour
-          glyph.addContour(vecs);
+          // douglass peucker goes here
+          // ...
+          glyph.addContour(contour);
+
+          return true; // true means continue scanning
         }
-      }
+      };
+
+      int y_increment = 5;
+
+      BlobScanner.scan(
+        pg_blob.pixels, pg_blob.width, pg_blob.height, 
+        0, 0, pg_blob.width, pg_blob.height, 
+        y_increment, 
+        thresholdChecker, 
+        contour_map, 
+        scan_id++, 
+        contour_data, 
+        contour_data_processor);
     }
+
     // finish exporting font
 
     f.buildFont();                                  // Build the font resulting in .ttf and .woff files
@@ -419,10 +561,6 @@ void export() {
 
 
 
-
-
-
-
 void debug_print(PShape shape) {
   for (int i = 0; i < shape.getVertexCount(); i++) {
     println(shape.getVertex(i));
@@ -435,27 +573,27 @@ void debug_print(PShape shape) {
 
 
 
-PVector[] blob_to_PVector_array(Blob the_blob) {
+//PVector[] blob_to_PVector_array(Blob the_blob) {
 
-  PVector[] result = new PVector[the_blob.getEdgeNb()*2];
+//  PVector[] result = new PVector[the_blob.getEdgeNb()*2];
 
-  int index = 0;
+//  int index = 0;
 
-  for (int i = 0; i<the_blob.getEdgeNb(); i++) {
-    EdgeVertex a = the_blob.getEdgeVertexA(i);
-    EdgeVertex b = the_blob.getEdgeVertexB(i);
+//  for (int i = 0; i<the_blob.getEdgeNb(); i++) {
+//    EdgeVertex a = the_blob.getEdgeVertexA(i);
+//    EdgeVertex b = the_blob.getEdgeVertexB(i);
 
-    PVector v1 = new PVector(a.x, a.y);
-    PVector v2 = new PVector(b.x, b.y);
+//    PVector v1 = new PVector(a.x, a.y);
+//    PVector v2 = new PVector(b.x, b.y);
 
-    result[index] = v1;
-    index += 1;
-    result[index] = v2;
-    index += 1;
-  }
+//    result[index] = v1;
+//    index += 1;
+//    result[index] = v2;
+//    index += 1;
+//  }
 
-  return result;
-}
+//  return result;
+//}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
