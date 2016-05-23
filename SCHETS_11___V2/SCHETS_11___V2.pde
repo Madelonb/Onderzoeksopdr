@@ -22,8 +22,8 @@ char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', '
 int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
-float[] x_positions = new float[MAX_SIZE];
-float[] y_positions = new float[MAX_SIZE];
+float[][] xy_positions = new float[MAX_SIZE][2];
+
 
 float[] values_pressure_sensor = new float [MAX_SIZE];
 float[] values_type_time = new float [MAX_SIZE];
@@ -87,6 +87,10 @@ void setup() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
+  
+  int X = 0;
+  int Y = 1;
+  
   if (record) {
     beginRecord(PDF, "frame-####.pdf");
   }
@@ -119,7 +123,7 @@ void draw() {
     if (c == '\n') {
       cursor_x = plot_x1;
       if (index >=  1) {
-        cursor_y = y_positions[index-1] + (spacing);
+        cursor_y = xy_positions[index-1][Y] + (spacing);
       } else {
         cursor_y = cursor_start_y + (spacing);
       }
@@ -140,17 +144,17 @@ void draw() {
         char last_c = typed_chars[index-1];
         if (last_c == '\n') {
           cursor_x = cursor_start_x;
-          cursor_y = y_positions[index-1];
+          cursor_y = xy_positions[index-1][Y];
         } else {
-          cursor_x = x_positions[index-1]+abs(modified_shapes[index-1].getWidth()) + kerning;
-          cursor_y = y_positions[index-1];
+          cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth()) + kerning;
+          cursor_y = xy_positions[index-1][Y];
           
           if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
             cursor_x = plot_x1;
             cursor_y += spacing;
           }
-          x_positions[index] = cursor_x;
-          y_positions[index] = cursor_y;
+          xy_positions[index][X] = cursor_x;
+          xy_positions[index][Y] = cursor_y;
         }
       }
     }
@@ -159,8 +163,8 @@ void draw() {
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     values_type_time[index] = time_diff;
     //println("force" +force);
-    x_positions[index] = cursor_x;
-    y_positions[index] = cursor_y;
+    xy_positions[index][X] = cursor_x;
+    xy_positions[index][Y] = cursor_y;
   }
 
 
@@ -197,8 +201,8 @@ void draw() {
 
     PShape shape = modified_shapes[i];
     shape.disableStyle();
-    float x = x_positions[i];
-    float y = y_positions[i];
+    float x = xy_positions[i][X];
+    float y = xy_positions[i][Y];
     float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 40, 100)) * scale;
     float rotationText = (map(constrain(values_type_time[i], 25, 150), 25, 150, -0.075, 0.05)) * scale;
     //float fontWeight = (map(constrain(values_type_time[i], 50, 300), 50, 300, 15, 50)) * scale;
