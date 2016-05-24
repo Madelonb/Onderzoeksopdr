@@ -36,7 +36,7 @@ void shape_modifier2(PShape shape) {
 
 
   shape.width = abs(shape.width * scale);
-  shape.width = abs(shape.width + (tempX/2));
+  shape.width = abs(shape.width + tempX);
   shape.width = abs(shape.width * key_timediff_map);
 
 
