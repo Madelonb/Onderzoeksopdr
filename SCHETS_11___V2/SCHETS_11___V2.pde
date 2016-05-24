@@ -6,7 +6,9 @@ import com.github.lemmingswalker.*;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-boolean simulate_bpm = true;
+final boolean BACKGROUND_COLOR = true;
+boolean simulate_bpm = false;
+boolean show_shapeframe = false;
 float scale = 0.03;
 
 float plot_x1, plot_y1, plot_x2, plot_y2;
@@ -63,12 +65,13 @@ float force = 80;
 float fontWeight;
 
 void setup() {
-  size(650, 650);
+  size(650, 850);
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
   plot_y2 = height-plot_y1;
   basic = createFont("FaktPro-Normal.ttf", 12);
+  //noCursor();
 
 
 
@@ -89,22 +92,6 @@ void setup() {
 
 void draw() {
 
-  if (!USE_ARDUINO) {
-    temp = map(constrain(mouseX, 100, 400), 100, 400, 25, 35);
-    bpm = map(constrain(mouseY, 100, 400), 100, 400, 50, 120);
-    // force
-  }
-
-  int X = 0;
-  int Y = 1;
-
-  if (record) {
-    beginRecord(PDF, "frame-####.pdf");
-  }
-
-  background(255);
-  fill(0);
-
 
   if (simulate_bpm) {
     if (millis() > timer + 1000) {
@@ -116,9 +103,50 @@ void draw() {
       }
       timer = millis();
     }
+  } else if (!USE_ARDUINO) {
+    temp = map(constrain(mouseX, 100, 400), 100, 400, 25, 35);
+    bpm = map(constrain(mouseY, 100, 400), 100, 400, 50, 120);
+    // force
   }
 
 
+
+
+
+  int X = 0;
+  int Y = 1;
+
+  if (record) {
+    beginRecord(PDF, "frame-####.pdf");
+  }
+
+
+  if (BACKGROUND_COLOR) {
+    color a1, a2;
+    float r1, g1, b1, r2, g2, b2;
+    r1 = map(temp, 25, 35, 0, 255);
+    b1 = map(temp, 30, 35, 200, 0);
+    g1 = map(temp, 25, 30, 200, 0);
+
+    r2 = map(temp, 25, 35, 255, 255);
+    g2 = map(temp, 25, 35, 255, 100);
+    b2 = map(temp, 25, 30, 255, 100);
+
+
+    a1 = color(r1, g1, b1);
+    a2 = color(r2, g2, b2);
+
+    for (int i = 0; i < height; i++) {
+      float inter = map(i, 0, height, 0, 1);
+      color c = lerpColor(a1, a2, inter);
+      stroke(c);
+      line(0, i, width, i);
+    }
+  } else {
+    background(255);
+  }
+
+  fill(0);
 
 
   if (has_typed_something()) {
@@ -187,11 +215,9 @@ void draw() {
   //{
 
   stroke(0);
-  //strokeWeight(0.5);
   strokeCap(SQUARE);
   strokeJoin(BEVEL);
   noFill();
-  //rotate(random(0,1));
 
 
 
@@ -211,14 +237,20 @@ void draw() {
     float x = xy_positions[i][X];
     float y = xy_positions[i][Y];
     float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 40, 100)) * scale;
-    float rotationText = (map(constrain(values_type_time[i], 25, 150), 25, 150, -0.075, 0.05)) * scale;
-    //float fontWeight = (map(constrain(values_type_time[i], 50, 300), 50, 300, 15, 50)) * scale;
-    float kerningOnTime = (map(constrain(values_type_time[i], 50, 300), 0, 300, -0.5, 2));
-    //kerning = (100 * scale * kerningOnTime) + fontWeight;
+    //float rotationText = (map(constrain(values_type_time[i], 25, 150), 25, 150, -0.075, 0.05)) * scale;
     //rotate(rotationText);
     strokeWeight(fontWeight);
     kerning = (80 * scale) + fontWeight;
     shape(shape, x, y);
+
+    if (show_shapeframe) {
+      noFill();
+      stroke(0);
+      strokeWeight(1);
+      rectMode(CORNER);
+      rect(x, y, shape.width, shape.height);
+    }
+
     //popMatrix();
   }
   //}
@@ -250,11 +282,18 @@ void keyPressed() {
   if (last_keypressed_frameCount == frameCount) return;
   last_keypressed_frameCount = frameCount;
 
-  if (key == CODED) {
-    if (keyCode == CONTROL) {// && (key == 's' || key == 'S')) {
-      println(key);
-      export();
+  if (keyPressed(CONTROL) && (keyPressed('w') || keyPressed('W'))) {
+    if (show_shapeframe == true) {
+      show_shapeframe = false;
+    } else {
+      show_shapeframe = true;
     }
+  }
+
+  if (keyPressed(CONTROL) && (keyPressed('s') || keyPressed('S'))) {
+    println("export");  
+    println(key);
+    export();
   } else if (char_ok(key)) {
     index++;
     typed_chars[index] = key;
@@ -267,10 +306,7 @@ void keyPressed() {
     if (index < -1) {
       index = -1;
     }
-  } //else if (key == ENTER) {
-  //  cursor_x = plot_x1;
-  //  cursor_y += 850 * scale;
-  //}
+  } 
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -676,3 +712,37 @@ void mousePressed() {
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+// Multiple key presses
+
+boolean[] keys = new boolean[1<<020];
+
+public boolean keyPressed(int c) {
+  return keys[c];
+}
+
+public boolean keyPressed(char c) {
+  c = Character.toUpperCase(c);
+  int index = (int)c;
+  return keys[index];
+}
+
+protected void handleKeyEvent(KeyEvent event) {
+
+  //key = event.getKey();
+  keyCode = event.getKeyCode();
+
+  // we could also create a bigger array so function keys will work
+  // if (keyCode < 256) {
+  if (event.getAction() == KeyEvent.PRESS) {
+    keys[keyCode] = true;
+  } else if (event.getAction() == KeyEvent.RELEASE) {
+    keys[keyCode] = false;
+  }
+  //}
+
+  super.handleKeyEvent(event);
+}
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
