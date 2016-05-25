@@ -306,7 +306,7 @@ void keyPressed() {
     if (index < -1) {
       index = -1;
     }
-  } 
+  }
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -340,6 +340,8 @@ PShape loadCharShape(char c) {
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
+  //normalize(shape);
+  //scale_PShape(shape, 50);
   return shape;
 }
 
@@ -552,8 +554,8 @@ void export() {
             y /= pg_blob.height;
             y = 1-y; // flip upside down
 
-            x *= modified_shape.width;
-            y *= modified_shape.height;
+            x *= modified_shape.width / (scale*2);
+            y *= modified_shape.height / (scale*2);
 
             contour[i] = new PVector(x, y);
           }
