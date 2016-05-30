@@ -6,7 +6,7 @@ import com.github.lemmingswalker.*;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-final boolean BACKGROUND_COLOR = true;
+final boolean BACKGROUND_COLOR = false;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
 float scale = 0.03;
@@ -55,7 +55,7 @@ float spacing = 900 * scale;
 
 //Arduino
 
-float bpm = 120;       // HOLDS HEART RATE VALUE FROM ARDUINO
+float bpm = 65;       // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
 float temp;
@@ -71,7 +71,7 @@ void setup() {
   plot_x2 = width-plot_x1;
   plot_y2 = height-plot_y1;
   basic = createFont("FaktPro-Normal.ttf", 12);
-  //noCursor();
+  noCursor();
 
 
 
@@ -96,10 +96,20 @@ void draw() {
   if (simulate_bpm) {
     if (millis() > timer + 1000) {
 
-      if (bpm < 65) {
-        bpm = (constrain(bpm + random(0, 3), 60, 120));
-      } else {
+      boolean bpmplus = true;
+      boolean bpmmin = false;
+
+      if (bpm > 90) {
+        bpmplus = false;
+        bpmmin = true;
+      } 
+
+      if (bpmmin) {
         bpm = (constrain(bpm + random(-1.5, 1), 60, 120));
+      }
+
+      if (bpmplus) {
+        bpm = (constrain(bpm + random(0, 1.5), 60, 120));
       }
       timer = millis();
     }
@@ -167,6 +177,9 @@ void draw() {
 
       PShape shape = loadCharShape(c);
       the_shape_modifier(shape);
+      // hier zijn we gebleven
+      scale_PShape(shape, 100);
+      
       current_modified_shape = shape;
       modified_shapes[index] = shape;
 
@@ -197,7 +210,7 @@ void draw() {
 
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     values_type_time[index] = time_diff;
-    //println("force" +force);
+    println("force" +force);
     xy_positions[index][X] = cursor_x;
     xy_positions[index][Y] = cursor_y;
   }
@@ -340,7 +353,7 @@ PShape loadCharShape(char c) {
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
-  //normalize(shape);
+  normalize(shape);
   //scale_PShape(shape, 50);
   return shape;
 }
