@@ -1,7 +1,7 @@
 
 void the_shape_modifier(PShape shape) {
   //scale_PShape(shape, scale);
-  shape_modifier3(shape);
+  shape_modifier4(shape);
 }
 
 
@@ -12,7 +12,7 @@ void shape_modifier3(PShape shape) {
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
 
-    result.x = result.x *= 0.5;
+    result.x *= 0.5;
     result.y = result.y;
     shape.setVertex(i, result.x, result.y);
   }
@@ -24,6 +24,40 @@ void shape_modifier3(PShape shape) {
   }
 }
 
+void shape_modifier4(PShape shape) {
+
+  // shape.width *= 0.5;
+  // shape.height *= 2.5;
+
+  for (int i = 0; i < shape.getVertexCount(); i++) {
+    PVector result = shape.getVertex(i);
+
+    result.x *= 0.5;
+
+    float y_scale = 2.5;
+    float base_line = 0.76;
+
+    result.y -= base_line;
+
+    if (result.y < 0) {
+      result.y = result.y * y_scale;
+      result.y = result.y + (base_line * y_scale);
+    }
+    else {
+      result.y += base_line;
+    }
+
+    shape.setVertex(i, result.x, result.y);
+  }
+
+  if (shape.getChildCount() > 0) {
+    for (int j = 0; j < shape.getChildCount(); j++) {
+      shape_modifier4(shape.getChild(j));
+    }
+  }
+}
+
+
 
 void shape_modifier2(PShape shape) {
 
@@ -32,11 +66,11 @@ void shape_modifier2(PShape shape) {
 
 
   heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 2);
-  tempX = map(constrain(temp, 25, 30), 30, 25, 0, 3);
+  tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.2);
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 1, 2);
 
-  shape.width = abs(shape.width * scale);
-  shape.height = abs(shape.height * scale);  
+  shape.width = abs(shape.width);
+  shape.height = abs(shape.height);  
   shape.width = abs(shape.width + (tempX/2));
   shape.width = abs(shape.width * key_timediff_map);
   shape.height = abs(shape.height* heartBeatY);
@@ -45,14 +79,14 @@ void shape_modifier2(PShape shape) {
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
 
-    result.x = result.x *scale;
-    result.y = result.y *scale;
-    result.y = result.y * heartBeatY - (heartBeatY*17.5);
+    result.x = result.x;
+    result.y = result.y;
+    //result.y = result.y * heartBeatY - (heartBeatY*17.5);
 
     result.y = result.y * heartBeatY;
 
     //if (result.y < 10) {
-    if (result.y < -7) {
+    if (result.y < 0.5) {
 
       result.x = result.x + tempX;
     }

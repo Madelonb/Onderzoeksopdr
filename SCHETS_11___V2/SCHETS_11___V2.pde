@@ -51,7 +51,8 @@ int timer = millis();
 
 float key_timediff_map;
 float kerning = 0;
-float spacing = 900 * scale;
+//float spacing = 900 * scale;
+float leading = 200;
 
 //Arduino
 
@@ -71,7 +72,7 @@ void setup() {
   plot_x2 = width-plot_x1;
   plot_y2 = height-plot_y1;
   basic = createFont("FaktPro-Normal.ttf", 12);
-  noCursor();
+  //noCursor();
 
 
 
@@ -168,17 +169,19 @@ void draw() {
     if (c == '\n') {
       cursor_x = plot_x1;
       if (index >=  1) {
-        cursor_y = xy_positions[index-1][Y] + (spacing);
+        cursor_y = xy_positions[index-1][Y] + leading;
       } else {
-        cursor_y = cursor_start_y + (spacing);
+        cursor_y = cursor_start_y + leading;
       }
       modified_shapes[index] = null;
     } else {
 
       PShape shape = loadCharShape(c);
       the_shape_modifier(shape);
-      // hier zijn we gebleven
+      normalize(shape);
       scale_PShape(shape, 100);
+      // scale
+
       
       current_modified_shape = shape;
       modified_shapes[index] = shape;
@@ -199,7 +202,7 @@ void draw() {
 
           if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
             cursor_x = plot_x1;
-            cursor_y += spacing;
+            cursor_y += leading;
           }
           xy_positions[index][X] = cursor_x;
           xy_positions[index][Y] = cursor_y;
