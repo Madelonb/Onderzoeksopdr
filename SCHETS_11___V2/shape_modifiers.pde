@@ -1,7 +1,7 @@
 
 void the_shape_modifier(PShape shape) {
   //scale_PShape(shape, scale);
-  shape_modifier4(shape);
+  shape_modifier2(shape);
 }
 
 
@@ -41,12 +41,9 @@ void shape_modifier4(PShape shape) {
 
     if (result.y < 0) {
       result.y = result.y * y_scale;
-      result.y = result.y + (base_line * y_scale);
-    }
-    else {
-      result.y += base_line;
     }
 
+    result.y += base_line;
     shape.setVertex(i, result.x, result.y);
   }
 
@@ -63,27 +60,40 @@ void shape_modifier2(PShape shape) {
 
   float heartBeatY;
   float tempX;
+  float base_line = 0.76;
 
 
   heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 2);
   tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.2);
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 1, 2);
 
-  shape.width = abs(shape.width);
-  shape.height = abs(shape.height);  
+
+  //shape.height = abs(shape.height) - base_line;
+  //shape.height = abs(shape.height) * heartBeatY;
+  //shape.height = abs(shape.height) + base_line;
+
   shape.width = abs(shape.width + (tempX/2));
   shape.width = abs(shape.width * key_timediff_map);
-  shape.height = abs(shape.height* heartBeatY);
+  //shape.height = abs(shape.height* heartBeatY);
 
 
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
 
     result.x = result.x;
-    result.y = result.y;
     //result.y = result.y * heartBeatY - (heartBeatY*17.5);
 
-    result.y = result.y * heartBeatY;
+    //result.y = result.y * heartBeatY;
+
+
+
+    result.y -= base_line;
+
+    if (result.y < 0) {
+      result.y = result.y * heartBeatY;
+    }
+
+    result.y += base_line;
 
     //if (result.y < 10) {
     if (result.y < 0.5) {
