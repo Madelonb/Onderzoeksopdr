@@ -178,11 +178,11 @@ void draw() {
 
       PShape shape = loadCharShape(c);
       the_shape_modifier(shape);
-      normalize(shape);
+      scale_PShape(shape, 1.0/shape.height);
       scale_PShape(shape, 100);
       // scale
 
-      
+
       current_modified_shape = shape;
       modified_shapes[index] = shape;
 
@@ -256,7 +256,21 @@ void draw() {
     //float rotationText = (map(constrain(values_type_time[i], 25, 150), 25, 150, -0.075, 0.05)) * scale;
     //rotate(rotationText);
     strokeWeight(fontWeight);
-    kerning = (80 * scale) + fontWeight;
+
+
+    if (temp < 26) {
+      kerning = ((80*scale) + fontWeight) - 20;
+    } else if (temp < 27) {
+      kerning = ((80*scale) + fontWeight) - 15;
+    } else if (temp < 28) {
+      kerning = ((80*scale) + fontWeight) - 10;
+    } else if (temp < 29) {
+      kerning = ((80*scale) + fontWeight) - 5;
+    } else {
+      kerning = ((80*scale) + fontWeight) - 0;
+    }
+
+
     shape(shape, x, y);
 
     if (show_shapeframe) {
@@ -356,7 +370,7 @@ PShape loadCharShape(char c) {
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
-  normalize(shape);
+  scale_PShape(shape, 1.0/shape.height);
   //scale_PShape(shape, 50);
   return shape;
 }

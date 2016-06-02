@@ -61,7 +61,7 @@ void shape_modifier2(PShape shape) {
   float heartBeatY;
   float tempX;
   float base_line = 0.76;
-
+  
 
   heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 2);
   tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.2);
@@ -72,7 +72,7 @@ void shape_modifier2(PShape shape) {
   //shape.height = abs(shape.height) * heartBeatY;
   //shape.height = abs(shape.height) + base_line;
 
-  shape.width = abs(shape.width + (tempX/2));
+  shape.width = abs(shape.width + tempX);
   shape.width = abs(shape.width * key_timediff_map);
   //shape.height = abs(shape.height* heartBeatY);
 
