@@ -52,7 +52,7 @@ int timer = millis();
 float key_timediff_map;
 float kerning = 0;
 //float spacing = 900 * scale;
-float leading = 200;
+float leading = 75;
 
 //Arduino
 
@@ -65,8 +65,12 @@ int lf = 10;      // ASCII linefeed
 float force = 80;
 float fontWeight;
 
+
+float base_line = 0.8;
+
+
 void setup() {
-  size(650, 850);
+  size(650, 650);
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
@@ -74,10 +78,10 @@ void setup() {
   basic = createFont("FaktPro-Normal.ttf", 12);
   //noCursor();
 
-
+  
 
   //theBlobDetection = new BlobDetection(1000, 2000);
-  pg_blob = createGraphics(1000, 2000);
+  pg_blob = createGraphics(650, 850);
 
   if (USE_ARDUINO) {
     println(Serial.list());    // print a list of available serial ports
@@ -196,9 +200,16 @@ void draw() {
         if (last_c == '\n') {
           cursor_x = cursor_start_x;
           cursor_y = xy_positions[index-1][Y];
-        } else {
+        } else {         
           cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth()) + kerning;
           cursor_y = xy_positions[index-1][Y];
+          
+          ////
+          float temparture_prev = tempartures[index-1];
+          if (temparture_prev < 30) {
+            kerning = map(kerning, min_tempature, max_tempature, 0, 50);
+          }
+          
 
           if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
             cursor_x = plot_x1;
@@ -259,16 +270,20 @@ void draw() {
 
 
     if (temp < 26) {
-      kerning = ((80*scale) + fontWeight) - 20;
+     kerning = ((80*scale) + fontWeight) - 20;
     } else if (temp < 27) {
-      kerning = ((80*scale) + fontWeight) - 15;
+     kerning = ((80*scale) + fontWeight) - 15;
     } else if (temp < 28) {
-      kerning = ((80*scale) + fontWeight) - 10;
+     kerning = ((80*scale) + fontWeight) - 10;
     } else if (temp < 29) {
-      kerning = ((80*scale) + fontWeight) - 5;
+     kerning = ((80*scale) + fontWeight) - 5;
     } else {
-      kerning = ((80*scale) + fontWeight) - 0;
+     kerning = ((80*scale) + fontWeight) - 0;
     }
+    
+
+    
+
 
 
     shape(shape, x, y);
@@ -363,14 +378,15 @@ PShape loadCharShape(char c) {
   if (cs.toUpperCase().equals(cs)) cs = cs + cs;
 
 
-
-
   String file = cs+".svg";
   String dataFolder = "../MadFontData/Alfabet SVG V/";
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
   scale_PShape(shape, 1.0/shape.height);
+  
+  
+  
   //scale_PShape(shape, 50);
   return shape;
 }
@@ -497,15 +513,15 @@ int scan_id = 1;
 
 void export() {
 
-  f = new Fontastic(this, "MadelonFont");
+  f = new Fontastic(this, "MadelonFont"+hour()+""+second());
   f.setAuthor("Madelon Balk");
 
   // init BlobDetection
   ThresholdChecker thresholdChecker = new ThresholdChecker() {
     public boolean result_of(int c) {
       //                 green < 128
-      return ((c >> 8) & 0xFF) < 128;
-    }
+      return green(c) < 128;
+    } 
   };
 
   ContourData contour_data = new ContourData();
@@ -539,7 +555,7 @@ void export() {
       //  println("shape height: "+modified_shape.height);
       //  debug_print(modified_shape);
       //}
-
+      //pg_blob.strokeWeight(1);
       pg_blob.shape(modified_shape, 10, 10, pg_blob.width-10, pg_blob.height-10);
 
       // create border for blobscan
@@ -584,10 +600,10 @@ void export() {
             y /= pg_blob.height;
             y = 1-y; // flip upside down
 
-            x *= modified_shape.width / (scale*2);
-            y *= modified_shape.height / (scale*2);
+            x *= modified_shape.width;
+            y *= modified_shape.height;
 
-            contour[i] = new PVector(x, y);
+            contour[i] = new PVector(x * 500, y * 500);
           }
 
           // douglass peucker goes here
@@ -624,9 +640,6 @@ void export() {
 
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-
-
 
 
 void debug_print(PShape shape) {

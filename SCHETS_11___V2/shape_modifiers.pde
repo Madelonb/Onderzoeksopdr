@@ -68,34 +68,21 @@ void shape_modifier2(PShape shape) {
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 1, 2);
 
 
-  //shape.height = abs(shape.height) - base_line;
-  //shape.height = abs(shape.height) * heartBeatY;
-  //shape.height = abs(shape.height) + base_line;
-
   shape.width = abs(shape.width + tempX);
   shape.width = abs(shape.width * key_timediff_map);
-  //shape.height = abs(shape.height* heartBeatY);
-
 
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
 
     result.x = result.x;
-    //result.y = result.y * heartBeatY - (heartBeatY*17.5);
-
-    //result.y = result.y * heartBeatY;
-
-
-
     result.y -= base_line;
 
-    if (result.y < 0) {
+   // if (result.y < 0) {
       result.y = result.y * heartBeatY;
-    }
+   // }
 
     result.y += base_line;
 
-    //if (result.y < 10) {
     if (result.y < 0.5) {
 
       result.x = result.x + tempX;
