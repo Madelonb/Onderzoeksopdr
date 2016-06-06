@@ -6,7 +6,7 @@ import com.github.lemmingswalker.*;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-final boolean BACKGROUND_COLOR = false;
+final boolean BACKGROUND_COLOR = true;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
 float scale = 0.03;
@@ -30,6 +30,9 @@ float[][] xy_positions = new float[MAX_SIZE][2];
 
 float[] values_pressure_sensor = new float [MAX_SIZE];
 float[] values_type_time = new float [MAX_SIZE];
+float[] temperatures = new float [MAX_SIZE];
+float min_temperature = 25;
+float max_temperature = 35;
 
 float charWidth;
 
@@ -204,10 +207,10 @@ void draw() {
           cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth()) + kerning;
           cursor_y = xy_positions[index-1][Y];
           
-          ////
-          float temparture_prev = tempartures[index-1];
-          if (temparture_prev < 30) {
-            kerning = map(kerning, min_tempature, max_tempature, 0, 50);
+          //
+          float temperature_prev = temperatures[index-1];
+          if (temperature_prev < 30) {
+           kerning = map(kerning, min_temperature, max_temperature, 0, 50);
           }
           
 
@@ -223,6 +226,7 @@ void draw() {
 
 
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
+    temperatures[index] = temp;
     values_type_time[index] = time_diff;
     println("force" +force);
     xy_positions[index][X] = cursor_x;
