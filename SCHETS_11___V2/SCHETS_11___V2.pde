@@ -4,12 +4,13 @@ import processing.serial.*;
 import processing.pdf.*;
 import com.github.lemmingswalker.*;
 
+
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
 final boolean BACKGROUND_COLOR = true;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
-float scale = 0.03;
+float scale = 0.015;
 
 float plot_x1, plot_y1, plot_x2, plot_y2;
 
@@ -39,7 +40,7 @@ float charWidth;
 float cursor_x = 50;
 float cursor_y = 50;
 float cursor_start_x = 50;
-float cursor_start_y = 100;
+float cursor_start_y = 50;
 
 Fontastic f;
 //BlobDetection theBlobDetection;
@@ -53,9 +54,9 @@ int last_millis;
 int timer = millis();
 
 float key_timediff_map;
-float kerning = 0;
+float kerning = 10;
 //float spacing = 900 * scale;
-float leading = 75;
+float leading = 30;
 
 //Arduino
 
@@ -73,7 +74,9 @@ float base_line = 0.8;
 
 
 void setup() {
-  size(650, 650);
+  size(500, 700);
+  noCursor();
+  colorMode(HSB, 360, height, height);
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
@@ -81,7 +84,7 @@ void setup() {
   basic = createFont("FaktPro-Normal.ttf", 12);
   //noCursor();
 
-  
+
 
   //theBlobDetection = new BlobDetection(1000, 2000);
   pg_blob = createGraphics(650, 850);
@@ -99,6 +102,7 @@ void setup() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
+
 
 
   if (simulate_bpm) {
@@ -122,7 +126,7 @@ void draw() {
       timer = millis();
     }
   } else if (!USE_ARDUINO) {
-    temp = map(constrain(mouseX, 100, 400), 100, 400, 25, 35);
+    temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
     bpm = map(constrain(mouseY, 100, 400), 100, 400, 50, 120);
     // force
   }
@@ -141,22 +145,16 @@ void draw() {
 
   if (BACKGROUND_COLOR) {
     color a1, a2;
-    float r1, g1, b1, r2, g2, b2;
-    r1 = map(temp, 25, 35, 0, 255);
-    b1 = map(temp, 30, 35, 200, 0);
-    g1 = map(temp, 25, 30, 200, 0);
+    float h1, h2;
+    h1 = map(temp, 25, 35, 260, 359);
+    h2 = map(temp, 25, 35, 150, 250);
 
-    r2 = map(temp, 25, 35, 255, 255);
-    g2 = map(temp, 25, 35, 255, 100);
-    b2 = map(temp, 25, 30, 255, 100);
-
-
-    a1 = color(r1, g1, b1);
-    a2 = color(r2, g2, b2);
+    a1 = color(h1, height, height);
+    a2 = color(h2, height, height);
 
     for (int i = 0; i < height; i++) {
-      float inter = map(i, 0, height, 0, 1);
-      color c = lerpColor(a1, a2, inter);
+      float inter1 = map(i, 0, height, 0, 1);
+      color c = lerpColor(a1, a2, inter1);
       stroke(c);
       line(0, i, width, i);
     }
@@ -186,7 +184,7 @@ void draw() {
       PShape shape = loadCharShape(c);
       the_shape_modifier(shape);
       scale_PShape(shape, 1.0/shape.height);
-      scale_PShape(shape, 100);
+      scale_PShape(shape, 50);
       // scale
 
 
@@ -206,13 +204,15 @@ void draw() {
         } else {         
           cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth()) + kerning;
           cursor_y = xy_positions[index-1][Y];
-          
+
           //
           float temperature_prev = temperatures[index-1];
           if (temperature_prev < 30) {
-           kerning = map(kerning, min_temperature, max_temperature, 0, 50);
+            kerning = map(constrain(temp, 25, 30), min_temperature, max_temperature, -7.5, 0);
+          } else {
+            kerning = ((80*scale) + fontWeight);
           }
-          
+
 
           if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
             cursor_x = plot_x1;
@@ -273,20 +273,20 @@ void draw() {
     strokeWeight(fontWeight);
 
 
-    if (temp < 26) {
-     kerning = ((80*scale) + fontWeight) - 20;
-    } else if (temp < 27) {
-     kerning = ((80*scale) + fontWeight) - 15;
-    } else if (temp < 28) {
-     kerning = ((80*scale) + fontWeight) - 10;
-    } else if (temp < 29) {
-     kerning = ((80*scale) + fontWeight) - 5;
-    } else {
-     kerning = ((80*scale) + fontWeight) - 0;
-    }
-    
+    //if (temp < 26) {
+    //  kerning = ((80*scale) + fontWeight) - 6;
+    //} else if (temp < 27) {
+    //  kerning = ((80*scale) + fontWeight) - 4;
+    //} else if (temp < 28) {
+    //  kerning = ((80*scale) + fontWeight) - 3;
+    //} else if (temp < 29) {
+    //  kerning = ((80*scale) + fontWeight) - 2;
+    //} else {
+    //  kerning = ((80*scale) + fontWeight) - 0;
+    //}
 
-    
+
+
 
 
 
@@ -315,19 +315,35 @@ void draw() {
   text(temp + "°C", lerp(plot_x1, plot_x2, 0.5), plot_y2);
   //text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
   text("BPM "+((int) bpm), plot_x2 - textWidth("XXX BPM"), plot_y2);
-
+  text("force "+((int) force), plot_x1, plot_y2);
 
   if (record) {
     endRecord();
     record = false;
   }
+
+  //saveFrame("frame-####.jpg");
 }
+
+
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 int last_keypressed_frameCount = -1; // used to avoid running keyPressed more than once in one frame
 
 void keyPressed() {
+
+  if (!USE_ARDUINO) {
+    if (key == CODED) {
+      if (keyCode == UP) {
+        force += 100;
+      }
+      if (keyCode == DOWN) {
+        force -= 100;
+      }
+    }
+  }
+
   if (last_keypressed_frameCount == frameCount) return;
   last_keypressed_frameCount = frameCount;
 
@@ -388,9 +404,9 @@ PShape loadCharShape(char c) {
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
   scale_PShape(shape, 1.0/shape.height);
-  
-  
-  
+
+
+
   //scale_PShape(shape, 50);
   return shape;
 }
@@ -525,7 +541,7 @@ void export() {
     public boolean result_of(int c) {
       //                 green < 128
       return green(c) < 128;
-    } 
+    }
   };
 
   ContourData contour_data = new ContourData();
