@@ -3,11 +3,14 @@ import fontastic.*;
 import processing.serial.*;
 import processing.pdf.*;
 import com.github.lemmingswalker.*;
+import com.hamoid.*;
 
+VideoExport videoExport;
+boolean recording = false;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-final boolean BACKGROUND_COLOR = true;
+final boolean BACKGROUND_COLOR = false;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
 float scale = 0.015;
@@ -75,14 +78,17 @@ float base_line = 0.8;
 
 void setup() {
   size(500, 700);
+  frameRate(30);
   noCursor();
-  colorMode(HSB, 360, height, height);
+  colorMode(HSB, 360, 100, 100);
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
   plot_y2 = height-plot_y1;
   basic = createFont("FaktPro-Normal.ttf", 12);
   //noCursor();
+
+  videoExport = new VideoExport(this, "interactive.mp4");
 
 
 
@@ -159,7 +165,7 @@ void draw() {
       line(0, i, width, i);
     }
   } else {
-    background(255);
+    background(0, 0, 100);
   }
 
   fill(0);
@@ -273,21 +279,6 @@ void draw() {
     strokeWeight(fontWeight);
 
 
-    //if (temp < 26) {
-    //  kerning = ((80*scale) + fontWeight) - 6;
-    //} else if (temp < 27) {
-    //  kerning = ((80*scale) + fontWeight) - 4;
-    //} else if (temp < 28) {
-    //  kerning = ((80*scale) + fontWeight) - 3;
-    //} else if (temp < 29) {
-    //  kerning = ((80*scale) + fontWeight) - 2;
-    //} else {
-    //  kerning = ((80*scale) + fontWeight) - 0;
-    //}
-
-
-
-
 
 
     shape(shape, x, y);
@@ -300,7 +291,9 @@ void draw() {
       rect(x, y, shape.width, shape.height);
     }
 
-    //popMatrix();
+    if (recording) {
+      videoExport.saveFrame();
+    }
   }
   //}
 
@@ -372,6 +365,11 @@ void keyPressed() {
       index = -1;
     }
   }
+
+  if (keyPressed(CONTROL) && (keyPressed('v') || keyPressed('V'))) {
+    recording = !recording;
+    println("Recording is " + (recording ? "ON" : "OFF"));
+  }
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -399,7 +397,7 @@ PShape loadCharShape(char c) {
 
 
   String file = cs+".svg";
-  String dataFolder = "../MadFontData/Alfabet SVG V/";
+  String dataFolder = "../MadFontData/Alfabet SVG VI/";
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
