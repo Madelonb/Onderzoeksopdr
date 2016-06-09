@@ -10,7 +10,7 @@ boolean recording = false;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-final boolean BACKGROUND_COLOR = false;
+final boolean BACKGROUND_COLOR = true;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
 float scale = 0.015;
@@ -80,7 +80,6 @@ void setup() {
   size(500, 700);
   frameRate(30);
   noCursor();
-  colorMode(HSB, 360, 100, 100);
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
@@ -148,8 +147,11 @@ void draw() {
     beginRecord(PDF, "frame-####.pdf");
   }
 
+  pushStyle();
+  colorMode(HSB, 360, 100, 100);
 
   if (BACKGROUND_COLOR) {
+
     color a1, a2;
     float h1, h2;
     h1 = map(temp, 25, 35, 260, 359);
@@ -160,13 +162,21 @@ void draw() {
 
     for (int i = 0; i < height; i++) {
       float inter1 = map(i, 0, height, 0, 1);
-      color c = lerpColor(a1, a2, inter1);
+
+      float h = map(i, 0, height, -60, 230);
+      if (h > 0) h = 360 - h;
+      h = abs(h);
+      color c = color(h, 100, 100);
+
+      //color c = lerpColor(a1, a2, inter1);
       stroke(c);
       line(0, i, width, i);
     }
   } else {
     background(0, 0, 100);
   }
+
+  popStyle();
 
   fill(0);
 
@@ -290,10 +300,6 @@ void draw() {
       rectMode(CORNER);
       rect(x, y, shape.width, shape.height);
     }
-
-    if (recording) {
-      videoExport.saveFrame();
-    }
   }
   //}
 
@@ -316,6 +322,10 @@ void draw() {
   }
 
   //saveFrame("frame-####.jpg");
+
+  if (recording) {
+    videoExport.saveFrame();
+  }
 }
 
 
@@ -406,6 +416,7 @@ PShape loadCharShape(char c) {
 
 
   //scale_PShape(shape, 50);
+  shape.disableStyle();
   return shape;
 }
 

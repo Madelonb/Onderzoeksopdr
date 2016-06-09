@@ -66,7 +66,7 @@ void shape_modifier2(PShape shape) {
   tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.2);
 
   shape.width = abs(shape.width + tempX);
-  shape.width = abs(shape.width * key_timediff_map);
+  //shape.width = abs(shape.width * key_timediff_map);
 
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
@@ -124,6 +124,8 @@ void vector_modifier2(PVector v) {
   if (v.y < 0.5) {
     v.x = v.x + tempX;
   }
+  
 
-  v.x = v.x * key_timediff_map;
+
+  //v.x = v.x * key_timediff_map;
 }
