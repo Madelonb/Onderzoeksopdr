@@ -213,10 +213,10 @@ void draw() {
 
           //
           float temperature_prev = temperatures[index-1];
-          if (temperature_prev < 30) {
-            kerning = map(constrain(temp, 25, 30), min_temperature, max_temperature, -7.5, 0);
+          if (temperature_prev < 28.5) {
+            kerning = map(constrain(temperatures[index-1], 25, 30), min_temperature, max_temperature, -5, 4);
           } else {
-            kerning = ((80*scale) + fontWeight);
+            kerning = 4;
           }
 
 
@@ -397,7 +397,7 @@ PShape loadCharShape(char c) {
 
 
   String file = cs+".svg";
-  String dataFolder = "../MadFontData/Alfabet SVG VI/";
+  String dataFolder = "../MadFontData/Alfabet SVG VII/";
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
