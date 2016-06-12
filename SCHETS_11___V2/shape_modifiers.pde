@@ -35,7 +35,7 @@ void shape_modifier4(PShape shape) {
     result.x *= 0.5;
 
     float y_scale = 2.5;
-    float base_line = 0.76;
+    float base_line = 0.7462;
 
     result.y -= base_line;
 
@@ -63,10 +63,10 @@ float base_line2 = 0.86;
 void shape_modifier2(PShape shape) {
 
   heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 2);
-  tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.2);
+  tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.075);
 
   shape.width = abs(shape.width + tempX);
-  //shape.width = abs(shape.width * key_timediff_map);
+  shape.width = abs(shape.width * key_timediff_map);
 
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
@@ -116,16 +116,17 @@ void normalize(PShape s) {
 }
 
 void vector_modifier2(PVector v) {
-  key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 1, 2);
+  key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 0.75, 2);
   v.y -= base_line;
   v.y = v.y * heartBeatY;
-  v.y += base_line;
-
-  if (v.y < 0.5) {
+  if (v.y < -0.1) {
     v.x = v.x + tempX;
   }
   
+    v.y += base_line;
+
+  
 
 
-  //v.x = v.x * key_timediff_map;
+  v.x = v.x * key_timediff_map;
 }

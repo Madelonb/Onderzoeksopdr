@@ -59,7 +59,7 @@ int timer = millis();
 float key_timediff_map;
 float kerning = 10;
 //float spacing = 900 * scale;
-float leading = 30;
+float leading = 60;
 
 //Arduino
 
@@ -73,11 +73,11 @@ float force = 80;
 float fontWeight;
 
 
-float base_line = 0.8;
+float base_line = 0.7462;
 
 
 void setup() {
-  size(500, 700);
+  size(700, 700);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -152,23 +152,24 @@ void draw() {
 
   if (BACKGROUND_COLOR) {
 
-    color a1, a2;
-    float h1, h2;
-    h1 = map(temp, 25, 35, 260, 359);
-    h2 = map(temp, 25, 35, 150, 250);
+    //color a1, a2;
+    //float h1, h2;
+    //h1 = map(temp, 25, 35, 260, 359);
+    //h2 = map(temp, 25, 35, 150, 250);
 
-    a1 = color(h1, height, height);
-    a2 = color(h2, height, height);
+    //a1 = color(h1, height, height);
+    //a2 = color(h2, height, height);
+    
+    float a1, a2;
 
     for (int i = 0; i < height; i++) {
-      float inter1 = map(i, 0, height, 0, 1);
+      a1 = map(temp, 35, 25, -60, 80);
+      a2 = map(temp, 35, 25, 0, 200);
+      float h = map(i, 0, height, a1, a2);
 
-      float h = map(i, 0, height, -60, 230);
       if (h > 0) h = 360 - h;
       h = abs(h);
       color c = color(h, 100, 100);
-
-      //color c = lerpColor(a1, a2, inter1);
       stroke(c);
       line(0, i, width, i);
     }
@@ -200,7 +201,7 @@ void draw() {
       PShape shape = loadCharShape(c);
       the_shape_modifier(shape);
       scale_PShape(shape, 1.0/shape.height);
-      scale_PShape(shape, 50);
+      scale_PShape(shape, 100);
       // scale
 
 
@@ -224,7 +225,7 @@ void draw() {
           //
           float temperature_prev = temperatures[index-1];
           if (temperature_prev < 28.5) {
-            kerning = map(constrain(temperatures[index-1], 25, 30), min_temperature, max_temperature, -5, 4);
+            kerning = map(constrain(temperatures[index-1], 25, 30), min_temperature, max_temperature, -5, 3);
           } else {
             kerning = 4;
           }
