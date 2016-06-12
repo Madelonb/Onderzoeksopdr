@@ -17,18 +17,22 @@ void draw() {
   y = y + yspeed;
 
   if (x > 200) {
+    x = 200;
     xspeed = 0;
     yspeed = 1;
   }
   if (y > 200) {
+    y = 200;
     yspeed = 0;
     xspeed = -1;
   }
   if (x < 100) {
+    x = 100;
     xspeed = 0;
     yspeed = -1;
   }
   if (y < 100) {
+    y = 100;
     yspeed = 0;
     xspeed = 1;
   }
