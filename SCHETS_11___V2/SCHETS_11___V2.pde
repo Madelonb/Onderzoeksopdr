@@ -10,8 +10,8 @@ boolean recording = false;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
-final boolean BACKGROUND_COLOR = true;
-final boolean ANIMATE_SHAPE = true;
+final boolean BACKGROUND_COLOR = false;
+final boolean ANIMATE_SHAPE = false;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
 float scale = 0.015;
@@ -36,6 +36,7 @@ float[][] xy_positions = new float[MAX_SIZE][2];
 float[] values_pressure_sensor = new float [MAX_SIZE];
 float[] values_type_time = new float [MAX_SIZE];
 float[] temperatures = new float [MAX_SIZE];
+float[] kernings = new float [MAX_SIZE];
 float min_temperature = 25;
 float max_temperature = 35;
 
@@ -58,27 +59,34 @@ int last_millis;
 int timer = millis();
 
 float key_timediff_map;
-float kerning = 10;
+float kerning = 0.05;
 //float spacing = 900 * scale;
-float leading = 60;
+float leading = 0.2;
 
 //Arduino
 
-float bpm = 65;       // HOLDS HEART RATE VALUE FROM ARDUINO
+float bpm = 50;       // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
-float temp;
+float temp = 30;
 int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
-float force = 80;
+float force = 10;
 float fontWeight;
+
+float bpmSpeed = 1;
+float tempSpeed = 0;
 
 
 float base_line = 0.7462;
 
+float draw_shape_scale = 100;
+
+String debug_str;
+
 
 void setup() {
-  size(700, 700);
+  size(500, 700);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -108,7 +116,8 @@ void setup() {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
-
+  
+  debug_str = "";
 
 
   if (simulate_bpm) {
@@ -132,33 +141,30 @@ void draw() {
       timer = millis();
     }
   } else if (ANIMATE_SHAPE) {
-    bpm = 50;
-    temp = 30;
-    float bpmSpeed = 1;
-    float tempSpeed = 0;
-    
+
     bpm = bpm + bpmSpeed;
     temp = temp + tempSpeed;
-    
-    if (bpm == 120) {
+
+    if (bpm > 120) {
       bpm = 120;
       bpmSpeed = 0;
-      tempSpeed = 0.2;
+      tempSpeed = -0.2;
     }
-    if (temp == 25) {
+    if (temp < 25) {
       temp = 25;
       tempSpeed = 0;
       bpmSpeed = -1;
     }
-    if (bpm == 50) {
+    if (bpm < 50) {
       bpm = 50;
       bpmSpeed = 0;
-      tempSpeed = -0.2;
+      tempSpeed = 0.2;
     }
-    if (temp == 30) {
+    if (temp > 30) {
       temp = 30;
       tempSpeed = 0;
       bpmSpeed = 1;
+      force += 50;
     }
   } else if (!USE_ARDUINO) {
     temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
@@ -221,9 +227,9 @@ void draw() {
     if (c == '\n') {
       cursor_x = plot_x1;
       if (index >=  1) {
-        cursor_y = xy_positions[index-1][Y] + leading;
+        cursor_y = xy_positions[index-1][Y] + (draw_shape_scale * leading);
       } else {
-        cursor_y = cursor_start_y + leading;
+        cursor_y = cursor_start_y + (leading * draw_shape_scale);
       }
       modified_shapes[index] = null;
     } else {
@@ -231,7 +237,7 @@ void draw() {
       PShape shape = loadCharShape(c);
       the_shape_modifier(shape);
       scale_PShape(shape, 1.0/shape.height);
-      scale_PShape(shape, 100);
+      scale_PShape(shape, draw_shape_scale);
       // scale
 
 
@@ -249,21 +255,21 @@ void draw() {
           cursor_x = cursor_start_x;
           cursor_y = xy_positions[index-1][Y];
         } else {         
-          cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth()) + kerning;
+          cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth() * kerning);
           cursor_y = xy_positions[index-1][Y];
 
           //
           float temperature_prev = temperatures[index-1];
           if (temperature_prev < 28.5) {
-            kerning = map(constrain(temperatures[index-1], 25, 30), min_temperature, max_temperature, -5, 3);
+            kerning = map(constrain(temperatures[index-1], 25, 30), min_temperature, max_temperature, 0.8, 1.0);
           } else {
-            kerning = 4;
+            kerning = 1;
           }
 
 
           if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
             cursor_x = plot_x1;
-            cursor_y += leading;
+            cursor_y += leading * draw_shape_scale;
           }
           xy_positions[index][X] = cursor_x;
           xy_positions[index][Y] = cursor_y;
@@ -275,6 +281,7 @@ void draw() {
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     temperatures[index] = temp;
     values_type_time[index] = time_diff;
+    kernings[index] = kerning;
     println("force" +force);
     xy_positions[index][X] = cursor_x;
     xy_positions[index][Y] = cursor_y;
@@ -314,22 +321,27 @@ void draw() {
     shape.disableStyle();
     float x = xy_positions[i][X];
     float y = xy_positions[i][Y];
-    float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 40, 100)) * scale;
+    
+    debug_str += x + "\t\t"+ y + "\n";
+    
+    float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 1, 30));
     //float rotationText = (map(constrain(values_type_time[i], 25, 150), 25, 150, -0.075, 0.05)) * scale;
     //rotate(rotationText);
     strokeWeight(fontWeight);
 
 
 
-
+    stroke(0);
     shape(shape, x, y);
 
     if (show_shapeframe) {
       noFill();
-      stroke(0);
+      stroke(i % 2 == 0 ? color(255,0,0) :  color(0,0,255));
       strokeWeight(1);
       rectMode(CORNER);
       rect(x, y, shape.width, shape.height);
+      line(x, y + shape.height * base_line, x + shape.width, y + shape.height * base_line);
+      text(kernings[i], x + (shape.width/2), y);
     }
   }
   //}
@@ -352,11 +364,18 @@ void draw() {
     record = false;
   }
 
-  //saveFrame("frame-####.jpg");
+  saveFrame("frame-####.tif");
 
   if (recording) {
     videoExport.saveFrame();
   }
+  
+  if (DEBUG) {
+    fill(0);
+    textAlign(LEFT, TOP);
+    text(debug_str, width-100, 50);
+  }
+  
 }
 
 
@@ -572,6 +591,8 @@ boolean has_typed_something() {
 int scan_id = 1;
 
 void export() {
+  
+  //colorMode(RGB, 255, 255, 255);
 
   f = new Fontastic(this, "MadelonFont"+hour()+""+second());
   f.setAuthor("Madelon Balk");
@@ -605,19 +626,31 @@ void export() {
       }
 
       the_shape_modifier(shape);
+      
+      scale_PShape(shape, 1.0/shape.height);
+      scale_PShape(shape, pg_blob.height);
+      
+      println(pg_blob.height);
+  
       final PShape modified_shape = shape;
       // draw on PGraphics
       pg_blob.beginDraw();
       pg_blob.background(255);
-
-      //if (c == 'a') {
-      //  println("shape width: "+modified_shape.width);
-      //  println("shape height: "+modified_shape.height);
-      //  debug_print(modified_shape);
-      //}
+      
+      
+      if (c == 'a') {
+        println("shape width: "+modified_shape.width);
+        println("shape height: "+modified_shape.height);
+        debug_print(modified_shape);
+      }
       //pg_blob.strokeWeight(1);
-      pg_blob.shape(modified_shape, 10, 10, pg_blob.width-10, pg_blob.height-10);
-
+      pg_blob.strokeWeight(1);
+      pg_blob.shapeMode(CENTER);
+      pg_blob.stroke(0);
+      //int str_mar = 40+2;
+      //pg_blob.shape(modified_shape, +str_mar, +str_mar, pg_blob.width-str_mar, pg_blob.height-str_mar);
+      pg_blob.shape(modified_shape, pg_blob.width/2, pg_blob.height/2);
+          
       // create border for blobscan
       pg_blob.noFill();
       pg_blob.stroke(255);
