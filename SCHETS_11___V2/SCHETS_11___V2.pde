@@ -11,6 +11,7 @@ boolean recording = false;
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG = true;
 final boolean BACKGROUND_COLOR = true;
+final boolean ANIMATE_SHAPE = true;
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
 float scale = 0.015;
@@ -130,11 +131,40 @@ void draw() {
       }
       timer = millis();
     }
+  } else if (ANIMATE_SHAPE) {
+    bpm = 50;
+    temp = 30;
+    float bpmSpeed = 1;
+    float tempSpeed = 0;
+    
+    bpm = bpm + bpmSpeed;
+    temp = temp + tempSpeed;
+    
+    if (bpm == 120) {
+      bpm = 120;
+      bpmSpeed = 0;
+      tempSpeed = 0.2;
+    }
+    if (temp == 25) {
+      temp = 25;
+      tempSpeed = 0;
+      bpmSpeed = -1;
+    }
+    if (bpm == 50) {
+      bpm = 50;
+      bpmSpeed = 0;
+      tempSpeed = -0.2;
+    }
+    if (temp == 30) {
+      temp = 30;
+      tempSpeed = 0;
+      bpmSpeed = 1;
+    }
   } else if (!USE_ARDUINO) {
     temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
     bpm = map(constrain(mouseY, 100, 400), 100, 400, 50, 120);
     // force
-  }
+  } 
 
 
 
@@ -159,7 +189,7 @@ void draw() {
 
     //a1 = color(h1, height, height);
     //a2 = color(h2, height, height);
-    
+
     float a1, a2;
 
     for (int i = 0; i < height; i++) {
