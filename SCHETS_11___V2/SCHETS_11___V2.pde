@@ -10,8 +10,8 @@ String email_adress;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
-final boolean BACKGROUND_COLOR = false;
-final boolean ANIMATE_SHAPE = false;
+final boolean BACKGROUND_COLOR = true;
+final boolean ANIMATE_SHAPE = true;
 
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
@@ -68,11 +68,13 @@ int readFail = 1;
 float temp = 30;
 int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
-float force = 10;
+float force = 100;
 float fontWeight;
 
 float bpmSpeed = 1;
 float tempSpeed = 0;
+int timediffSpeed = 0;
+
 
 float heartBeatY;
 float tempX;
@@ -80,7 +82,7 @@ float tempX;
 
 float base_line = 0.7462;
 
-float draw_shape_scale = 200;
+float draw_shape_scale = 75;
 
 String debug_str;
 
@@ -88,7 +90,7 @@ String debug_str;
 
 
 void setup() {
-  size(500, 700);
+  size(700, 1000);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -137,7 +139,10 @@ void draw() {
 
 
   if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
-    draw_shape_scale = map(mouseX, 0, width, 15, 400);
+    for (int i=0; i < index; i++) {
+      draw_shape_scale = map(mouseX, 0, width, 15, 400);
+      modified_shapes[i] = null;
+    }
   }
 
   debug_str += "fontsize: "+draw_shape_scale+"\n";
@@ -163,25 +168,42 @@ void draw() {
 
     bpm = bpm + bpmSpeed;
     temp = temp + tempSpeed;
+    time_diff = time_diff + timediffSpeed;
 
     if (bpm > 120) {
       bpm = 120;
       bpmSpeed = 0;
+      tempSpeed = 0;
+      timediffSpeed = 8;
+    }
+    if (time_diff > 500) {
+      time_diff = 500;
+      timediffSpeed = 0;
       tempSpeed = -0.2;
     }
     if (temp < 25) {
       temp = 25;
       tempSpeed = 0;
+      //timediffSpeed = -8;
       bpmSpeed = -1;
     }
-    if (bpm < 50) {
-      bpm = 50;
-      bpmSpeed = 0;
-      tempSpeed = 0.2;
+    if (bpm < 50){
+     bpm = 50;
+      //time_diff = 0;
+     //timediffSpeed = 0;
+     bpmSpeed = 0;
+     tempSpeed = 0.2;
     }
-    if (temp > 30) {
-      temp = 30;
+    if (temp > 35) {
+      temp = 35;
+      //bpmSpeed = 0;
       tempSpeed = 0;
+      timediffSpeed = -8;
+    }
+    if (time_diff < 0) {
+      time_diff = 0;
+      timediffSpeed = 0;
+      //tempSpeed = 0;
       bpmSpeed = 1;
       force += 50;
     }
@@ -192,8 +214,8 @@ void draw() {
     if (keyPressed(UP)) {
       force += 10;
     }
-    if (keyPressed(DOWN)){
-     force -= 10; 
+    if (keyPressed(DOWN)) {
+      force -= 10;
     }
   } 
 
@@ -264,29 +286,29 @@ void draw() {
       cursor_x = plot_x1;
       cursor_y += draw_shape_scale * 0.5;
     }
-  
+
     // vakantie
     // v -> akantie
     // string woord = vakantie (of array)
     /*
     String woord = "";
-    Daar steeds letters aan toevoegen tot het een enter is of een spatie.
-    float legth = 0;
-    for (int j = 0; j < woord.legth; j++
-      char c = woord[j];
-      legth += shape_width(load(c));
-    }
-    // nu weet je lengte woord
-    
-    if (cursor_x + lengte woord > plot_x2) {
-      cursor_x = plot_x1;
-      cursor_y += draw_shape_scale * 0.5;
-    }
-    
-    
-    
-    */
-    
+     Daar steeds letters aan toevoegen tot het een enter is of een spatie.
+     float legth = 0;
+     for (int j = 0; j < woord.legth; j++
+     char c = woord[j];
+     legth += shape_width(load(c));
+     }
+     // nu weet je lengte woord
+     
+     if (cursor_x + lengte woord > plot_x2) {
+     cursor_x = plot_x1;
+     cursor_y += draw_shape_scale * 0.5;
+     }
+     
+     
+     
+     */
+
 
     float x = cursor_x;
     float y = cursor_y;
@@ -294,7 +316,7 @@ void draw() {
 
     debug_str += x + "\t\t"+ y + "\n";
 
-    float strokeWeight = map(values_pressure_sensor[i], 0, 1024, 0.01, 0.30);
+    float strokeWeight = map(constrain(values_pressure_sensor[i],0,1024), 0, 1024, 0.005, 0.1);
     strokeWeight *= draw_shape_scale; 
 
     strokeWeight(strokeWeight);
@@ -304,8 +326,8 @@ void draw() {
     noFill();
 
     shape(shape, x, y);
-    
-   // unused
+
+    // unused
     positions_xy[i][X] = x;
     positions_xy[i][Y] = y;
 
@@ -317,15 +339,16 @@ void draw() {
     //cursor_x -= shape_width(shape) * difference_width;
     //cursor_x += draw_shape_scale * 0.05;
 
-    if (i > 0) {
-      //float temperature_prev = temperatures[i-1];
-      //if (temperature_prev < 28.5) {
-      //kerning = map(constrain(temperature_prev, min_temperature, 30), min_temperature, 30, 0.5, 1.0);
-      //} else {
-      //  kerning = 1;
-      //}
-      //cursor_x +=  shape_width(shape) * kerning;
+    //if (i > 0) {
+    //float temperature_prev = temperatures[i];
+    if (temperatures[i] < 30) {
+      kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, (-0.05*draw_shape_scale), (0.05*draw_shape_scale));
+    } else {
+      kerning = draw_shape_scale * 0.05;
     }
+    //cursor_x +=  shape_width(shape) * kerning;
+    cursor_x += kerning + strokeWeight;
+    //}
 
 
 
@@ -365,7 +388,7 @@ void draw() {
     record = false;
   }
 
-  //saveFrame("../frame-####.tif");
+  saveFrame("../MOVIEMAKER/frame-####.tif");
 
 
   if (DEBUG) {
@@ -422,8 +445,10 @@ void keyPressed() {
     index++;
     typed_chars[index] = key;
     //update_cursor_position();
+    if (!ANIMATE_SHAPE){
     time_diff = millis() - last_millis;
     last_millis = millis();
+    }
   } else if (key == BACKSPACE) {
     //cursor_x -= current_modified_shape.getWidth() + kerning;
     index--;

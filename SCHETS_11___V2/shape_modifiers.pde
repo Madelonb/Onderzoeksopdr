@@ -115,18 +115,25 @@ void vector_modifier2(PVector v, char c) {
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 0.75, 2);
   v.y -= base_line;
   v.y = v.y * heartBeatY;
-  
-  if (c == 'V' || c == 'R') {
-    
-  }
-  
-  if (v.x > 0.01) {
+
+  if (c == 'c' || c == 'd' || c == 'e' || c == 'f' || c == 'o' || c == 'q' || c == 't' || c == 'v' || c == 'w') {
+    if (v.x > 0.01) {
+      if (v.y < -0.1) {
+        v.x = v.x + tempX;
+      }
+    }
+  } else {
     if (v.y < -0.1) {
       v.x = v.x + tempX;
     }
-
-    v.x *= key_timediff_map;
   }
 
+  //if (v.x > 0.01) {
+  //if (v.y < -0.1) {
+  //  v.x = v.x + tempX;
+  //  }
+
+
+  v.x *= key_timediff_map;
   v.y += base_line;
 }
