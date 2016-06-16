@@ -1,7 +1,7 @@
 
-void the_shape_modifier(PShape shape) {
+void the_shape_modifier(PShape shape, char c) {
   //scale_PShape(shape, scale);
-  shape_modifier2(shape);
+  shape_modifier2(shape, c);
 }
 
 
@@ -54,13 +54,9 @@ void shape_modifier4(PShape shape) {
   }
 }
 
-float heartBeatY;
-float tempX;
-float base_line2 = 0.86;
 
 
-
-void shape_modifier2(PShape shape) {
+void shape_modifier2(PShape shape, char c) {
 
   heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 2);
   tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.075);
@@ -71,14 +67,14 @@ void shape_modifier2(PShape shape) {
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
 
-    vector_modifier2(result);
+    vector_modifier2(result, c);
 
     shape.setVertex(i, result.x, result.y);
   }
 
   if (shape.getChildCount() > 0) {
     for (int j = 0; j < shape.getChildCount(); j++) {
-      shape_modifier2(shape.getChild(j));
+      shape_modifier2(shape.getChild(j), c);
     }
   }
 }
@@ -115,18 +111,22 @@ void normalize(PShape s) {
   scale_PShape(s, scale);
 }
 
-void vector_modifier2(PVector v) {
+void vector_modifier2(PVector v, char c) {
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 0.75, 2);
   v.y -= base_line;
   v.y = v.y * heartBeatY;
-  if (v.y < -0.1) {
-    v.x = v.x + tempX;
+  
+  if (c == 'V' || c == 'R') {
+    
   }
   
-    v.y += base_line;
+  if (v.x > 0.01) {
+    if (v.y < -0.1) {
+      v.x = v.x + tempX;
+    }
 
-  
+    v.x *= key_timediff_map;
+  }
 
-
-  v.x = v.x * key_timediff_map;
+  v.y += base_line;
 }

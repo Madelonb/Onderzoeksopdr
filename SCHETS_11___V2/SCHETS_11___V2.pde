@@ -5,16 +5,16 @@ import processing.pdf.*;
 import com.github.lemmingswalker.*;
 import com.hamoid.*;
 
-VideoExport videoExport;
-boolean recording = false;
+boolean ask_for_email = false;
+String email_adress;
 
 final static boolean USE_ARDUINO = false;
-final boolean DEBUG = true;
+final boolean DEBUG= true;
 final boolean BACKGROUND_COLOR = false;
 final boolean ANIMATE_SHAPE = false;
+
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
-float scale = 0.015;
 
 float plot_x1, plot_y1, plot_x2, plot_y2;
 
@@ -27,28 +27,26 @@ Serial port;
 
 char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n'};
 
+float[] original_width_chars = new float[allowed_chars.length];
+
 int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
-float[][] xy_positions = new float[MAX_SIZE][2];
 
+float[][] positions_xy = new float[MAX_SIZE][2];
 
 float[] values_pressure_sensor = new float [MAX_SIZE];
 float[] values_type_time = new float [MAX_SIZE];
 float[] temperatures = new float [MAX_SIZE];
-float[] kernings = new float [MAX_SIZE];
+
 float min_temperature = 25;
 float max_temperature = 35;
 
 float charWidth;
 
-float cursor_x = 50;
-float cursor_y = 50;
-float cursor_start_x = 50;
-float cursor_start_y = 50;
 
 Fontastic f;
-//BlobDetection theBlobDetection;
+
 PShape current_modified_shape;
 PGraphics pg_blob;
 PFont basic;
@@ -60,7 +58,6 @@ int timer = millis();
 
 float key_timediff_map;
 float kerning = 0.05;
-//float spacing = 900 * scale;
 float leading = 0.2;
 
 //Arduino
@@ -77,12 +74,17 @@ float fontWeight;
 float bpmSpeed = 1;
 float tempSpeed = 0;
 
+float heartBeatY;
+float tempX;
+
 
 float base_line = 0.7462;
 
-float draw_shape_scale = 100;
+float draw_shape_scale = 200;
 
 String debug_str;
+
+
 
 
 void setup() {
@@ -96,7 +98,6 @@ void setup() {
   basic = createFont("FaktPro-Normal.ttf", 12);
   //noCursor();
 
-  videoExport = new VideoExport(this, "interactive.mp4");
 
 
 
@@ -111,33 +112,51 @@ void setup() {
     port.bufferUntil('\n');  // set buffer full flag on receipt of carriage return
     portFail = 0;
   }
+
+  for (int i = 0; i < allowed_chars.length; i++) {
+    char c = allowed_chars[i];
+    PShape s = loadCharShape(c);
+    if (s == null) {
+      original_width_chars[i] = -1;
+      continue;
+    }
+
+    scale_PShape(s, 1.0 / s.height);
+    float s_width = shape_width(s);
+    original_width_chars[i] = s_width;
+
+    println(c, original_width_chars[i]);
+  }
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
-  
+
   debug_str = "";
 
+
+  if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
+    draw_shape_scale = map(mouseX, 0, width, 15, 400);
+  }
+
+  debug_str += "fontsize: "+draw_shape_scale+"\n";
+
+  if (ask_for_email) {
+    //text(email_adress, 100, 100);
+  }
+
+  //println(email_adress);
 
   if (simulate_bpm) {
     if (millis() > timer + 1000) {
 
-      boolean bpmplus = true;
-      boolean bpmmin = false;
-
       if (bpm > 90) {
-        bpmplus = false;
-        bpmmin = true;
-      } 
-
-      if (bpmmin) {
         bpm = (constrain(bpm + random(-1.5, 1), 60, 120));
-      }
-
-      if (bpmplus) {
+      } else {
         bpm = (constrain(bpm + random(0, 1.5), 60, 120));
       }
+
       timer = millis();
     }
   } else if (ANIMATE_SHAPE) {
@@ -168,33 +187,35 @@ void draw() {
     }
   } else if (!USE_ARDUINO) {
     temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
-    bpm = map(constrain(mouseY, 100, 400), 100, 400, 50, 120);
-    // force
+    bpm = map(constrain(mouseY, 0, height), 0, height, 120, 50);
+
+    if (keyPressed(UP)) {
+      force += 10;
+    }
+    if (keyPressed(DOWN)){
+     force -= 10; 
+    }
   } 
 
 
+  if (has_typed_something()) {
+    values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
+    temperatures[index] = temp;
+    values_type_time[index] = time_diff;
+  }
 
 
-
-  int X = 0;
-  int Y = 1;
 
   if (record) {
     beginRecord(PDF, "frame-####.pdf");
   }
 
-  pushStyle();
-  colorMode(HSB, 360, 100, 100);
+
 
   if (BACKGROUND_COLOR) {
 
-    //color a1, a2;
-    //float h1, h2;
-    //h1 = map(temp, 25, 35, 260, 359);
-    //h2 = map(temp, 25, 35, 150, 250);
-
-    //a1 = color(h1, height, height);
-    //a2 = color(h2, height, height);
+    pushStyle();
+    colorMode(HSB, 360, 100, 100);
 
     float a1, a2;
 
@@ -209,142 +230,122 @@ void draw() {
       stroke(c);
       line(0, i, width, i);
     }
+
+    popStyle();
   } else {
-    background(0, 0, 100);
-  }
-
-  popStyle();
-
-  fill(0);
-
-
-  if (has_typed_something()) {
-    String s = new String(subset(typed_chars, 0, index+1));
-    //text(s, 20, 20);
-    // we want to edit the last character typed
-    char c = typed_chars[index];
-
-    if (c == '\n') {
-      cursor_x = plot_x1;
-      if (index >=  1) {
-        cursor_y = xy_positions[index-1][Y] + (draw_shape_scale * leading);
-      } else {
-        cursor_y = cursor_start_y + (leading * draw_shape_scale);
-      }
-      modified_shapes[index] = null;
-    } else {
-
-      PShape shape = loadCharShape(c);
-      the_shape_modifier(shape);
-      scale_PShape(shape, 1.0/shape.height);
-      scale_PShape(shape, draw_shape_scale);
-      // scale
-
-
-      current_modified_shape = shape;
-      modified_shapes[index] = shape;
-
-      // set xy position
-      if (index == 0) {
-        cursor_x = cursor_start_x;
-        cursor_y = cursor_start_y;
-      } else {
-
-        char last_c = typed_chars[index-1];
-        if (last_c == '\n') {
-          cursor_x = cursor_start_x;
-          cursor_y = xy_positions[index-1][Y];
-        } else {         
-          cursor_x = xy_positions[index-1][X]+abs(modified_shapes[index-1].getWidth() * kerning);
-          cursor_y = xy_positions[index-1][Y];
-
-          //
-          float temperature_prev = temperatures[index-1];
-          if (temperature_prev < 28.5) {
-            kerning = map(constrain(temperatures[index-1], 25, 30), min_temperature, max_temperature, 0.8, 1.0);
-          } else {
-            kerning = 1;
-          }
-
-
-          if (cursor_x + current_modified_shape.getWidth() > plot_x2) {
-            cursor_x = plot_x1;
-            cursor_y += leading * draw_shape_scale;
-          }
-          xy_positions[index][X] = cursor_x;
-          xy_positions[index][Y] = cursor_y;
-        }
-      }
-    }
-
-
-    values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
-    temperatures[index] = temp;
-    values_type_time[index] = time_diff;
-    kernings[index] = kerning;
-    println("force" +force);
-    xy_positions[index][X] = cursor_x;
-    xy_positions[index][Y] = cursor_y;
+    background(255);
   }
 
 
 
-  //line(cursor_x+shape.width+kerning, cursor_y, cursor_x+shape.width+kerning, (cursor_y+200) * scale);
-
-
-  //display
-  //shape(modified_shape, cursor_x, cursor_y);
-  //}
-
-  // display
-  //{
-
-  stroke(0);
-  strokeCap(SQUARE);
-  strokeJoin(BEVEL);
-  noFill();
-
-
-
-
+  float cursor_x = plot_x1;
+  float cursor_y = plot_y1 - draw_shape_scale * 0.3;
 
 
   for (int i = 0; i <= index; i++) {
 
     char c = typed_chars[i];
     if (c == '\n') {
+      cursor_x = plot_x1;
+      cursor_y += draw_shape_scale * 0.5;
       continue;
     }
-    //pushMatrix();
 
     PShape shape = modified_shapes[i];
-    shape.disableStyle();
-    float x = xy_positions[i][X];
-    float y = xy_positions[i][Y];
+    if (shape == null || i == index) {
+      shape = loadCharShape(c);
+      the_shape_modifier(shape, c);
+      scale_PShape(shape, 1.0/shape.height);
+      scale_PShape(shape, draw_shape_scale);
+      modified_shapes[i] = shape;
+    }
+
+    if (cursor_x + shape.width > plot_x2) {
+      cursor_x = plot_x1;
+      cursor_y += draw_shape_scale * 0.5;
+    }
+  
+    // vakantie
+    // v -> akantie
+    // string woord = vakantie (of array)
+    /*
+    String woord = "";
+    Daar steeds letters aan toevoegen tot het een enter is of een spatie.
+    float legth = 0;
+    for (int j = 0; j < woord.legth; j++
+      char c = woord[j];
+      legth += shape_width(load(c));
+    }
+    // nu weet je lengte woord
     
+    if (cursor_x + lengte woord > plot_x2) {
+      cursor_x = plot_x1;
+      cursor_y += draw_shape_scale * 0.5;
+    }
+    
+    
+    
+    */
+    
+
+    float x = cursor_x;
+    float y = cursor_y;
+
+
     debug_str += x + "\t\t"+ y + "\n";
-    
-    float fontWeight = (map(values_pressure_sensor[i], 0, 1024, 1, 30));
-    //float rotationText = (map(constrain(values_type_time[i], 25, 150), 25, 150, -0.075, 0.05)) * scale;
-    //rotate(rotationText);
-    strokeWeight(fontWeight);
 
+    float strokeWeight = map(values_pressure_sensor[i], 0, 1024, 0.01, 0.30);
+    strokeWeight *= draw_shape_scale; 
 
-
+    strokeWeight(strokeWeight);
     stroke(0);
+    strokeCap(SQUARE);
+    strokeJoin(BEVEL);
+    noFill();
+
     shape(shape, x, y);
+    
+   // unused
+    positions_xy[i][X] = x;
+    positions_xy[i][Y] = y;
+
+    cursor_x += shape_width(shape);
+
+    // adjust kerning
+    //float new_width = shape_width(shape) * (1.0 / shape.height);
+    //float difference_width = new_width - original_width_chars[index_in_allowed_chars(c)];
+    //cursor_x -= shape_width(shape) * difference_width;
+    //cursor_x += draw_shape_scale * 0.05;
+
+    if (i > 0) {
+      //float temperature_prev = temperatures[i-1];
+      //if (temperature_prev < 28.5) {
+      //kerning = map(constrain(temperature_prev, min_temperature, 30), min_temperature, 30, 0.5, 1.0);
+      //} else {
+      //  kerning = 1;
+      //}
+      //cursor_x +=  shape_width(shape) * kerning;
+    }
+
+
 
     if (show_shapeframe) {
       noFill();
-      stroke(i % 2 == 0 ? color(255,0,0) :  color(0,0,255));
+      stroke(i % 2 == 0 ? color(255, 0, 0) :  color(0, 0, 255));
       strokeWeight(1);
       rectMode(CORNER);
+      println(shape.width);
       rect(x, y, shape.width, shape.height);
       line(x, y + shape.height * base_line, x + shape.width, y + shape.height * base_line);
-      text(kernings[i], x + (shape.width/2), y);
+      line(x, y, x + shape.width, y + shape.height);
+
+      //text(difference_width, x + (shape.width/2), y);
     }
   }
   //}
+
+
+
 
 
 
@@ -364,21 +365,27 @@ void draw() {
     record = false;
   }
 
-  saveFrame("frame-####.tif");
+  //saveFrame("../frame-####.tif");
 
-  if (recording) {
-    videoExport.saveFrame();
-  }
-  
+
   if (DEBUG) {
     fill(0);
     textAlign(LEFT, TOP);
+    debug_str = "";
     text(debug_str, width-100, 50);
   }
-  
 }
 
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+
+int index_in_allowed_chars(char c) {
+  for (int i = 0; i < allowed_chars.length; i++) {
+    char cc = allowed_chars[i];
+    if (c == cc) return i;
+  }
+  return -1;
+}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -386,32 +393,31 @@ int last_keypressed_frameCount = -1; // used to avoid running keyPressed more th
 
 void keyPressed() {
 
-  if (!USE_ARDUINO) {
-    if (key == CODED) {
-      if (keyCode == UP) {
-        force += 100;
-      }
-      if (keyCode == DOWN) {
-        force -= 100;
-      }
-    }
-  }
-
   if (last_keypressed_frameCount == frameCount) return;
   last_keypressed_frameCount = frameCount;
 
-  if (keyPressed(CONTROL) && (keyPressed('w') || keyPressed('W'))) {
-    if (show_shapeframe == true) {
-      show_shapeframe = false;
-    } else {
-      show_shapeframe = true;
-    }
-  }
+  if (keyPressed(CONTROL)) {
 
-  if (keyPressed(CONTROL) && (keyPressed('s') || keyPressed('S'))) {
-    println("export");  
-    println(key);
-    export();
+    if (keyPressed('w') || keyPressed('W')) {
+      if (show_shapeframe == true) {
+        show_shapeframe = false;
+      } else {
+        show_shapeframe = true;
+      }
+    } else if (keyPressed('s') || keyPressed('S')) {
+      println("export");  
+      println(key);
+      export();
+      ask_for_email = true;
+    }
+  } else if (ask_for_email) {
+    if (key == '\n') {
+      ask_for_email = false;
+    } else if (key == ' ') {
+      return;
+    } else {
+      email_adress += key;
+    }
   } else if (char_ok(key)) {
     index++;
     typed_chars[index] = key;
@@ -425,12 +431,9 @@ void keyPressed() {
       index = -1;
     }
   }
-
-  if (keyPressed(CONTROL) && (keyPressed('v') || keyPressed('V'))) {
-    recording = !recording;
-    println("Recording is " + (recording ? "ON" : "OFF"));
-  }
 }
+
+
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -440,6 +443,7 @@ boolean char_ok(char c) {
   }
   return false;
 }
+
 
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -591,7 +595,7 @@ boolean has_typed_something() {
 int scan_id = 1;
 
 void export() {
-  
+
   //colorMode(RGB, 255, 255, 255);
 
   f = new Fontastic(this, "MadelonFont"+hour()+""+second());
@@ -625,19 +629,19 @@ void export() {
         continue;
       }
 
-      the_shape_modifier(shape);
-      
+      the_shape_modifier(shape, c);
+
       scale_PShape(shape, 1.0/shape.height);
       scale_PShape(shape, pg_blob.height);
-      
+
       println(pg_blob.height);
-  
+
       final PShape modified_shape = shape;
       // draw on PGraphics
       pg_blob.beginDraw();
       pg_blob.background(255);
-      
-      
+
+
       if (c == 'a') {
         println("shape width: "+modified_shape.width);
         println("shape height: "+modified_shape.height);
@@ -650,7 +654,7 @@ void export() {
       //int str_mar = 40+2;
       //pg_blob.shape(modified_shape, +str_mar, +str_mar, pg_blob.width-str_mar, pg_blob.height-str_mar);
       pg_blob.shape(modified_shape, pg_blob.width/2, pg_blob.height/2);
-          
+
       // create border for blobscan
       pg_blob.noFill();
       pg_blob.stroke(255);
@@ -772,29 +776,29 @@ void debug_print(PShape shape) {
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 
-//float shape_width(PShape original) {
-//  float[] min_max = new float[] {MAX_FLOAT, MIN_FLOAT};
-//  shape_width(original, min_max);
-//  return min_max[1] - min_max[0];
-//}
+float shape_width(PShape original) {
+  float[] min_max = new float[] {MAX_FLOAT, MIN_FLOAT};
+  shape_width(original, min_max);
+  return min_max[1] - min_max[0];
+}
 
 
-//void shape_width(PShape original, float[] min_max) {
-//  int MIN = 0;
-//  int MAX = 1;
+void shape_width(PShape original, float[] min_max) {
+  int MIN = 0;
+  int MAX = 1;
 
-//  for (int i = 0; i < original.getVertexCount(); i++) {
-//    PVector result = original.getVertex(i);
-//    if (result.x > min_max[MAX]) min_max[MAX] = result.x;
-//    if (result.x < min_max[MIN]) min_max[MIN] = result.x;
-//  }
+  for (int i = 0; i < original.getVertexCount(); i++) {
+    PVector result = original.getVertex(i);
+    if (result.x > min_max[MAX]) min_max[MAX] = result.x;
+    if (result.x < min_max[MIN]) min_max[MIN] = result.x;
+  }
 
-//  if (original.getChildCount() > 0) {
-//    for (int j = 0; j < original.getChildCount(); j++) {
-//      shape_width(original.getChild(j), min_max);
-//    }
-//  }
-//}
+  if (original.getChildCount() > 0) {
+    for (int j = 0; j < original.getChildCount(); j++) {
+      shape_width(original.getChild(j), min_max);
+    }
+  }
+}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
