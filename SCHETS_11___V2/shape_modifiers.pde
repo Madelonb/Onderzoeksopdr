@@ -35,7 +35,7 @@ void shape_modifier4(PShape shape) {
     result.x *= 0.5;
 
     float y_scale = 2.5;
-    float base_line = 0.7462;
+    float base_line = 0.72;
 
     result.y -= base_line;
 
@@ -58,8 +58,8 @@ void shape_modifier4(PShape shape) {
 
 void shape_modifier2(PShape shape, char c) {
 
-  heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 2);
-  tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.075);
+  heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 3.5);
+  tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.06);
 
   shape.width = abs(shape.width + tempX);
   shape.width = abs(shape.width * key_timediff_map);
@@ -116,17 +116,24 @@ void vector_modifier2(PVector v, char c) {
   v.y -= base_line;
   v.y = v.y * heartBeatY;
 
-  if (c == 'c' || c == 'd' || c == 'e' || c == 'f' || c == 'o' || c == 'q' || c == 't' || c == 'v' || c == 'w') {
-    if (v.x > 0.01) {
-      if (v.y < -0.1) {
-        v.x = v.x + tempX;
-      }
-    }
-  } else {
-    if (v.y < -0.1) {
-      v.x = v.x + tempX;
-    }
+  //if (c == 'c' || c == 'd' || c == 'e' || c == 'f' || c == 'o' || c == 'q' || c == 't' || c == 'v' || c == 'w') {
+  //  if (v.x > 0.01) {
+  //    if (v.y < (-0.1 * heartBeatY)) {
+  //      v.x = v.x + tempX;
+  //    }
+  //  }
+  //} else {
+  //  if (v.y < (-0.1 * heartBeatY)) {
+  //    v.x = v.x + tempX;
+  //  }
+  //}
+
+  if (v.y < (-0.05 * heartBeatY)) {
+    v.x = v.x + tempX;
   }
+  
+
+
 
   //if (v.x > 0.01) {
   //if (v.y < -0.1) {

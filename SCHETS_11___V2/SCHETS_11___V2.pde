@@ -10,8 +10,8 @@ String email_adress;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
-final boolean BACKGROUND_COLOR = true;
-final boolean ANIMATE_SHAPE = true;
+final boolean BACKGROUND_COLOR = false;
+final boolean ANIMATE_SHAPE = false;
 
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
@@ -34,10 +34,10 @@ char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
 
 float[][] positions_xy = new float[MAX_SIZE][2];
-
 float[] values_pressure_sensor = new float [MAX_SIZE];
 float[] values_type_time = new float [MAX_SIZE];
 float[] temperatures = new float [MAX_SIZE];
+float[] strokeWeights = new float [MAX_SIZE];
 
 float min_temperature = 25;
 float max_temperature = 35;
@@ -58,7 +58,7 @@ int timer = millis();
 
 float key_timediff_map;
 float kerning = 0.05;
-float leading = 0.2;
+float leading = 0.35;
 
 //Arduino
 
@@ -80,17 +80,21 @@ float heartBeatY;
 float tempX;
 
 
-float base_line = 0.7462;
+float base_line = 0.72;
 
 float draw_shape_scale = 75;
 
 String debug_str;
 
+float strokeWeight;
+
+
+
 
 
 
 void setup() {
-  size(700, 1000);
+  size(500, 700);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -136,12 +140,37 @@ void setup() {
 void draw() {
 
   debug_str = "";
+  
 
+
+
+  //if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
+  //  for (int i=0; i < index+1; i++) {
+  //    draw_shape_scale += 15;
+  //    modified_shapes[i] = null;
+  //  }
+  //}
+
+  //if (keyPressed(CONTROL) && (keyPressed('j') || keyPressed('J'))) {
+  //  for (int i=0; i < index+1; i++) {
+  //    draw_shape_scale -= 15;
+  //    modified_shapes[i] = null;
+  //  }
+  //}
 
   if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
-    for (int i=0; i < index; i++) {
+    for (int i=0; i < index+1; i++) {
       draw_shape_scale = map(mouseX, 0, width, 15, 400);
       modified_shapes[i] = null;
+    }
+  }
+
+  // Delete all text
+
+  if (keyPressed(CONTROL) && (keyPressed('d') || keyPressed('D'))) {
+    for (int i=0; i < index+1; i++) {
+      index = -1;
+      //modified_shapes[i] = null;
     }
   }
 
@@ -187,12 +216,12 @@ void draw() {
       //timediffSpeed = -8;
       bpmSpeed = -1;
     }
-    if (bpm < 50){
-     bpm = 50;
+    if (bpm < 50) {
+      bpm = 50;
       //time_diff = 0;
-     //timediffSpeed = 0;
-     bpmSpeed = 0;
-     tempSpeed = 0.2;
+      //timediffSpeed = 0;
+      bpmSpeed = 0;
+      tempSpeed = 0.2;
     }
     if (temp > 35) {
       temp = 35;
@@ -213,9 +242,15 @@ void draw() {
 
     if (keyPressed(UP)) {
       force += 10;
+      if (force > 1024){
+       force = 1024; 
+      }
     }
     if (keyPressed(DOWN)) {
       force -= 10;
+      if (force < 0){
+       force = 0; 
+      }
     }
   } 
 
@@ -224,6 +259,7 @@ void draw() {
     values_pressure_sensor[index] = force; //waardes die van de sensor binnenkomen
     temperatures[index] = temp;
     values_type_time[index] = time_diff;
+    strokeWeights[index] = strokeWeight;
   }
 
 
@@ -269,7 +305,7 @@ void draw() {
     char c = typed_chars[i];
     if (c == '\n') {
       cursor_x = plot_x1;
-      cursor_y += draw_shape_scale * 0.5;
+      cursor_y += draw_shape_scale * leading;
       continue;
     }
 
@@ -284,7 +320,7 @@ void draw() {
 
     if (cursor_x + shape.width > plot_x2) {
       cursor_x = plot_x1;
-      cursor_y += draw_shape_scale * 0.5;
+      cursor_y += draw_shape_scale * leading;
     }
 
     // vakantie
@@ -316,7 +352,7 @@ void draw() {
 
     debug_str += x + "\t\t"+ y + "\n";
 
-    float strokeWeight = map(constrain(values_pressure_sensor[i],0,1024), 0, 1024, 0.005, 0.1);
+    strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
     strokeWeight *= draw_shape_scale; 
 
     strokeWeight(strokeWeight);
@@ -342,13 +378,12 @@ void draw() {
     //if (i > 0) {
     //float temperature_prev = temperatures[i];
     if (temperatures[i] < 30) {
-      kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, (-0.05*draw_shape_scale), (0.05*draw_shape_scale));
+      kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, (-0.02*draw_shape_scale), (0.03*draw_shape_scale));
     } else {
-      kerning = draw_shape_scale * 0.05;
+      kerning = draw_shape_scale * 0.03;
     }
     //cursor_x +=  shape_width(shape) * kerning;
-    cursor_x += kerning + strokeWeight;
-    //}
+    cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
 
 
 
@@ -388,7 +423,7 @@ void draw() {
     record = false;
   }
 
-  saveFrame("../MOVIEMAKER/frame-####.tif");
+  //saveFrame("../MOVIEMAKER/frame-####.tif");
 
 
   if (DEBUG) {
@@ -445,9 +480,9 @@ void keyPressed() {
     index++;
     typed_chars[index] = key;
     //update_cursor_position();
-    if (!ANIMATE_SHAPE){
-    time_diff = millis() - last_millis;
-    last_millis = millis();
+    if (!ANIMATE_SHAPE) {
+      time_diff = millis() - last_millis;
+      last_millis = millis();
     }
   } else if (key == BACKSPACE) {
     //cursor_x -= current_modified_shape.getWidth() + kerning;
@@ -486,7 +521,7 @@ PShape loadCharShape(char c) {
 
 
   String file = cs+".svg";
-  String dataFolder = "../MadFontData/Alfabet SVG VII/";
+  String dataFolder = "../MadFontData/Alfabet SVG 9/";
   // for now...
   //file = "../MadFontData/foo.svg";
   PShape shape = loadShape(dataFolder+file);
