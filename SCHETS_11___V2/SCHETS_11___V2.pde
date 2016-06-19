@@ -10,8 +10,8 @@ String email_adress;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
-final boolean BACKGROUND_COLOR = false;
-final boolean ANIMATE_SHAPE = false;
+final boolean BACKGROUND_COLOR = true;
+final boolean ANIMATE_SHAPE = true;
 
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
@@ -29,7 +29,7 @@ char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', '
 
 float[] original_width_chars = new float[allowed_chars.length];
 
-int index = -1;
+int index = 0;
 char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
 
@@ -65,13 +65,13 @@ float leading = 0.35;
 float bpm = 50;       // HOLDS HEART RATE VALUE FROM ARDUINO
 int portFail = 1;
 int readFail = 1;
-float temp = 30;
+float temp = 35;
 int portNumber = 1;
 int lf = 10;      // ASCII linefeed 
-float force = 100;
+float force = 50;
 float fontWeight;
 
-float bpmSpeed = 1;
+float bpmSpeed = 2;
 float tempSpeed = 0;
 int timediffSpeed = 0;
 
@@ -82,19 +82,18 @@ float tempX;
 
 float base_line = 0.72;
 
-float draw_shape_scale = 75;
+float draw_shape_scale = 800;
 
 String debug_str;
 
 float strokeWeight;
 
-
-
-
+char[] animated_chars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}; 
+int number = 0;
 
 
 void setup() {
-  size(500, 700);
+  size(707, 1000);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -103,9 +102,6 @@ void setup() {
   plot_y2 = height-plot_y1;
   basic = createFont("FaktPro-Normal.ttf", 12);
   //noCursor();
-
-
-
 
   //theBlobDetection = new BlobDetection(1000, 2000);
   pg_blob = createGraphics(650, 850);
@@ -140,9 +136,8 @@ void setup() {
 void draw() {
 
   debug_str = "";
-  
 
-
+  //typed_chars[index] = 'a';
 
   //if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
   //  for (int i=0; i < index+1; i++) {
@@ -157,6 +152,7 @@ void draw() {
   //    modified_shapes[i] = null;
   //  }
   //}
+
 
   if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
     for (int i=0; i < index+1; i++) {
@@ -173,6 +169,8 @@ void draw() {
       //modified_shapes[i] = null;
     }
   }
+
+
 
   debug_str += "fontsize: "+draw_shape_scale+"\n";
 
@@ -202,39 +200,54 @@ void draw() {
     if (bpm > 120) {
       bpm = 120;
       bpmSpeed = 0;
+      tempSpeed = -0.4;
+      timediffSpeed = 0;
+    }
+
+    if (temp < 25) {
+      temp = 25;
       tempSpeed = 0;
-      timediffSpeed = 8;
+      timediffSpeed = 16;
+      //bpmSpeed = -1;
     }
     if (time_diff > 500) {
       time_diff = 500;
       timediffSpeed = 0;
-      tempSpeed = -0.2;
-    }
-    if (temp < 25) {
-      temp = 25;
-      tempSpeed = 0;
-      //timediffSpeed = -8;
-      bpmSpeed = -1;
+      bpmSpeed = -2;
+      //tempSpeed = -0.2;
     }
     if (bpm < 50) {
       bpm = 50;
       //time_diff = 0;
       //timediffSpeed = 0;
       bpmSpeed = 0;
-      tempSpeed = 0.2;
+      tempSpeed = 0.4;
     }
     if (temp > 35) {
       temp = 35;
       //bpmSpeed = 0;
       tempSpeed = 0;
-      timediffSpeed = -8;
+      timediffSpeed = -16;
     }
     if (time_diff < 0) {
       time_diff = 0;
       timediffSpeed = 0;
       //tempSpeed = 0;
-      bpmSpeed = 1;
-      force += 50;
+      bpmSpeed = 2;
+      force += 200;
+    }
+
+    force = constrain(force, 0, 1024);
+    //if ((force == 850) && (typed_chars[index] == 'a')) {
+    //  typed_chars[index] = 'b';
+    //}
+
+    for (int i = 0; i < animated_chars.length; i++) {
+      typed_chars[index] = animated_chars[number];
+      if (force == 1024) {
+        number += 1;
+        force = 50;
+      }
     }
   } else if (!USE_ARDUINO) {
     temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
@@ -242,14 +255,14 @@ void draw() {
 
     if (keyPressed(UP)) {
       force += 10;
-      if (force > 1024){
-       force = 1024; 
+      if (force > 1024) {
+        force = 1024;
       }
     }
     if (keyPressed(DOWN)) {
       force -= 10;
-      if (force < 0){
-       force = 0; 
+      if (force < 0) {
+        force = 0;
       }
     }
   } 
@@ -294,10 +307,16 @@ void draw() {
     background(255);
   }
 
+  float cursor_x;
+  float cursor_y;
 
-
-  float cursor_x = plot_x1;
-  float cursor_y = plot_y1 - draw_shape_scale * 0.3;
+  if (ANIMATE_SHAPE) {
+    cursor_x = 300;
+    cursor_y = 75;
+  } else {
+    cursor_x = plot_x1;
+    cursor_y = plot_y1 - draw_shape_scale * 0.3;
+  }
 
 
   for (int i = 0; i <= index; i++) {
@@ -407,23 +426,30 @@ void draw() {
 
 
 
-  text(index, 20, 100);
+  //text(index, 20, 100);
 
   // PRINT THE DATA AND VARIABLE VALUES
   textAlign(LEFT, BOTTOM);
   fill(0);
   textFont(basic);
-  text(temp + "°C", lerp(plot_x1, plot_x2, 0.5), plot_y2);
+  String temperature = nfc(temp, 1);
+  //textAlign(CENTER);
+  text(temperature + "°C", lerp(plot_x1, plot_x2, 0.6), plot_y2);
   //text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
-  text("BPM "+((int) bpm), plot_x2 - textWidth("XXX BPM"), plot_y2);
-  text("force "+((int) force), plot_x1, plot_y2);
+  text(time_diff +" ms/key", lerp(plot_x1, plot_x2, 0.3), plot_y2);
+  text(((int) bpm)+" BPM", plot_x2 - textWidth("XXX BPM"), plot_y2);
+  text("pressure "+((int) force), plot_x1, plot_y2);
 
   if (record) {
     endRecord();
     record = false;
   }
 
-  //saveFrame("../MOVIEMAKER/frame-####.tif");
+  //if (keyPressed(CONTROL) && (keyPressed('r') || keyPressed('R'))) {
+  //  saveFrame("../MOVIEMAKER/frame-####.tif");
+  //}
+
+  saveFrame("../MOVIEMAKER/frame-####.tif");
 
 
   if (DEBUG) {
