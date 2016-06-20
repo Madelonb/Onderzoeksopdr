@@ -449,7 +449,7 @@ void draw() {
   //  saveFrame("../MOVIEMAKER/frame-####.tif");
   //}
 
-  saveFrame("../MOVIEMAKER/frame-####.tif");
+  //saveFrame("../MOVIEMAKER/frame-####.tif");
 
 
   if (DEBUG) {
