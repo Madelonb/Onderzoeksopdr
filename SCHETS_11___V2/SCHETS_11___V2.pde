@@ -10,8 +10,8 @@ String email_adress;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
-final boolean BACKGROUND_COLOR = true;
-final boolean ANIMATE_SHAPE = true;
+final boolean BACKGROUND_COLOR = false;
+final boolean ANIMATE_SHAPE = false;
 
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
@@ -29,7 +29,7 @@ char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', '
 
 float[] original_width_chars = new float[allowed_chars.length];
 
-int index = 0;
+int index = -1;
 char[] typed_chars = new char[MAX_SIZE];
 PShape[] modified_shapes = new PShape[MAX_SIZE];
 
@@ -82,7 +82,7 @@ float tempX;
 
 float base_line = 0.72;
 
-float draw_shape_scale = 800;
+float draw_shape_scale = 100;
 
 String debug_str;
 
