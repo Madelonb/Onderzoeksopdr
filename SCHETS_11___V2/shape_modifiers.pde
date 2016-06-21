@@ -60,10 +60,10 @@ void shape_modifier2(PShape shape, char c) {
 
   heartBeatY = map(constrain(bpm, 50, 120), 50, 120, 0.75, 3.5);
   tempX = map(constrain(temp, 25, 30), 30, 25, 0, 0.06);
+  //tempX = map(temperatures[index], 0, 1, min_temperature, max_temperature);
 
   shape.width = abs(shape.width + tempX);
   shape.width = abs(shape.width * key_timediff_map);
-
   for (int i = 0; i < shape.getVertexCount(); i++) {
     PVector result = shape.getVertex(i);
 
@@ -112,6 +112,7 @@ void normalize(PShape s) {
 }
 
 void vector_modifier2(PVector v, char c) {
+    
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 0.75, 2);
   v.y -= base_line;
   v.y = v.y * heartBeatY;
@@ -130,6 +131,7 @@ void vector_modifier2(PVector v, char c) {
 
   if (v.y < (-0.05 * heartBeatY)) {
     v.x = v.x + tempX;
+    //v.x += tempX * draw_shape_scale;
   }
   
 

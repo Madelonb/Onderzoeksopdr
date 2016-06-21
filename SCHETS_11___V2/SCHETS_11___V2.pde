@@ -1,4 +1,4 @@
-//import blobDetection.*;
+//import blobDetection.*; //<>//
 import fontastic.*;
 import processing.serial.*;
 import processing.pdf.*;
@@ -11,7 +11,18 @@ String email_adress;
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
 final boolean BACKGROUND_COLOR = false;
-final boolean ANIMATE_SHAPE = false;
+
+//final boolean ANIMATE_SHAPE = false;
+
+
+
+final int M_USER_MODE = 0;
+final int M_ANIMATE_1 = 1;
+final int M_ANIMATE_2 = 2;
+
+int mode = M_USER_MODE;
+
+
 
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
@@ -35,9 +46,10 @@ PShape[] modified_shapes = new PShape[MAX_SIZE];
 
 float[][] positions_xy = new float[MAX_SIZE][2];
 float[] values_pressure_sensor = new float [MAX_SIZE];
-float[] values_type_time = new float [MAX_SIZE];
+int[] values_type_time = new int [MAX_SIZE];
 float[] temperatures = new float [MAX_SIZE];
 float[] strokeWeights = new float [MAX_SIZE];
+float[] bpm_values = new float [MAX_SIZE];
 
 float min_temperature = 25;
 float max_temperature = 35;
@@ -89,7 +101,7 @@ String debug_str;
 float strokeWeight;
 
 char[] animated_chars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}; 
-int number = 0;
+int animated_char_index = 0;
 
 
 void setup() {
@@ -129,11 +141,31 @@ void setup() {
 
     println(c, original_width_chars[i]);
   }
+
+
+  if (mode == M_USER_MODE) {
+    draw_shape_scale = 100;
+  }  
+  if (mode == M_ANIMATE_1) {
+    index = 0;
+    typed_chars[0] = 'w';
+    draw_shape_scale = 500;
+  }  
+  if (mode == M_ANIMATE_2) {
+  }
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 void draw() {
+
+  if (mode == M_ANIMATE_2) {
+    if (frameCount % 60 == 0) {
+      index++;
+      typed_chars[index] = 'a';
+    }
+  }
+
 
   debug_str = "";
 
@@ -153,22 +185,21 @@ void draw() {
   //  }
   //}
 
+  draw_shape_scale = constrain(draw_shape_scale, 100, 500);
 
-  if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
-    draw_shape_scale = map(mouseX, 0, width, 15, 400);
+  if (keyPressed(CONTROL) && (keyPressed('='))) {
+    draw_shape_scale += 10;
     for (int i=0; i < index+1; i++) {
       modified_shapes[i] = null;
     }
   }
 
-  // Delete all text 
-  if (keyPressed(CONTROL) && (keyPressed('d') || keyPressed('D'))) {
+  if (keyPressed(CONTROL) && (keyPressed('-'))) {
+    draw_shape_scale -= 10;
     for (int i=0; i < index+1; i++) {
       modified_shapes[i] = null;
     }
-    index = -1;
   }
-  
 
 
   debug_str += "fontsize: "+draw_shape_scale+"\n";
@@ -190,7 +221,7 @@ void draw() {
 
       timer = millis();
     }
-  } else if (ANIMATE_SHAPE) {
+  } else if (mode == M_ANIMATE_1) {
 
     bpm = bpm + bpmSpeed;
     temp = temp + tempSpeed;
@@ -241,12 +272,13 @@ void draw() {
     //  typed_chars[index] = 'b';
     //}
 
-    for (int i = 0; i < animated_chars.length; i++) {
-      typed_chars[index] = animated_chars[number];
-      if (force == 1024) {
-        number += 1;
-        force = 50;
-      }
+    println(force);
+    if (force == 1024) {
+      println("force == 1024");
+      animated_char_index += 1;
+      typed_chars[index] = animated_chars[animated_char_index];
+      modified_shapes[index] = null;
+      force = 50;
     }
   } else if (!USE_ARDUINO) {
     temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
@@ -272,6 +304,7 @@ void draw() {
     temperatures[index] = temp;
     values_type_time[index] = time_diff;
     strokeWeights[index] = strokeWeight;
+    bpm_values[index] = bpm;
   }
 
 
@@ -309,7 +342,7 @@ void draw() {
   float cursor_x;
   float cursor_y;
 
-  if (ANIMATE_SHAPE) {
+  if (mode == M_ANIMATE_1) {
     cursor_x = 300;
     cursor_y = 75;
   } else {
@@ -329,11 +362,20 @@ void draw() {
 
     PShape shape = modified_shapes[i];
     if (shape == null || i == index) {
+
+      heartBeatY = bpm_values[i]; 
+      time_diff = (int) values_type_time[i];
+      tempX = temperatures[i]; 
+
       shape = loadCharShape(c);
       the_shape_modifier(shape, c);
       scale_PShape(shape, 1.0/shape.height);
       scale_PShape(shape, draw_shape_scale);
       modified_shapes[i] = shape;
+    }
+
+    if (index == 10) {
+      println("a");
     }
 
     if (cursor_x + shape.width > plot_x2) {
@@ -373,13 +415,28 @@ void draw() {
     strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
     strokeWeight *= draw_shape_scale; 
 
+    //temperatures[i] = norm(constrain(temp, min_temperature, max_temperature), min_temperature, max_temperature); 
+
+    //      tempatures[..] = 0.3
+    //      tempatures[..] = 0.4
+    //      tempatures[..] = 0.33
+    //      tempatures[..] = 0.55
+    //      tempatures[..] = 0.22
+
+    println("t "+tempX);
+
     strokeWeight(strokeWeight);
     stroke(0);
     strokeCap(SQUARE);
     strokeJoin(BEVEL);
     noFill();
 
-    shape(shape, x, y);
+    if (mode == M_ANIMATE_1) {
+      float half_width = shape_width(shape) / 2;
+      shape(shape, x-half_width, y);
+    } else {
+      shape(shape, x, y);
+    }
 
     // unused
     positions_xy[i][X] = x;
@@ -396,7 +453,7 @@ void draw() {
     //if (i > 0) {
     //float temperature_prev = temperatures[i];
 
-    
+
     kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, -0.02, 0.03) * draw_shape_scale;
 
 
@@ -505,7 +562,7 @@ void keyPressed() {
     index++;
     typed_chars[index] = key;
     //update_cursor_position();
-    if (!ANIMATE_SHAPE) {
+    if (mode != M_ANIMATE_1) {
       time_diff = millis() - last_millis;
       last_millis = millis();
     }
@@ -515,6 +572,14 @@ void keyPressed() {
     if (index < -1) {
       index = -1;
     }
+  }
+
+
+  if (keyPressed(CONTROL) && (keyPressed('d') || keyPressed('D'))) {
+    for (int i=0; i < index+1; i++) {
+      modified_shapes[i] = null;
+    }
+    index = -1;
   }
 }
 
