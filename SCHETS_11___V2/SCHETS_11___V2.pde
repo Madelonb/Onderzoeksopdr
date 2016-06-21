@@ -155,21 +155,20 @@ void draw() {
 
 
   if (keyPressed(CONTROL) && (keyPressed('f') || keyPressed('F'))) {
+    draw_shape_scale = map(mouseX, 0, width, 15, 400);
     for (int i=0; i < index+1; i++) {
-      draw_shape_scale = map(mouseX, 0, width, 15, 400);
       modified_shapes[i] = null;
     }
   }
 
-  // Delete all text
-
+  // Delete all text 
   if (keyPressed(CONTROL) && (keyPressed('d') || keyPressed('D'))) {
     for (int i=0; i < index+1; i++) {
-      index = -1;
-      //modified_shapes[i] = null;
+      modified_shapes[i] = null;
     }
+    index = -1;
   }
-
+  
 
 
   debug_str += "fontsize: "+draw_shape_scale+"\n";
@@ -396,11 +395,11 @@ void draw() {
 
     //if (i > 0) {
     //float temperature_prev = temperatures[i];
-    if (temperatures[i] < 30) {
-      kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, (-0.02*draw_shape_scale), (0.03*draw_shape_scale));
-    } else {
-      kerning = draw_shape_scale * 0.03;
-    }
+
+    
+    kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, -0.02, 0.03) * draw_shape_scale;
+
+
     //cursor_x +=  shape_width(shape) * kerning;
     cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
 
