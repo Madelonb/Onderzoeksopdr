@@ -10,7 +10,7 @@ String email_adress;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
-final boolean BACKGROUND_COLOR = false;
+final boolean BACKGROUND_COLOR = true;
 
 //final boolean ANIMATE_SHAPE = false;
 
@@ -53,9 +53,6 @@ float[] bpm_values = new float [MAX_SIZE];
 
 float min_temperature = 25;
 float max_temperature = 35;
-
-float charWidth;
-
 
 Fontastic f;
 
@@ -105,7 +102,7 @@ int animated_char_index = 0;
 
 
 void setup() {
-  size(707, 1000);
+  size(707, 700);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -360,12 +357,21 @@ void draw() {
       continue;
     }
 
+    String typed_string = new String(typed_chars);
+
+    String rest_word = rest_word(typed_string, i);
+
+
     PShape shape = modified_shapes[i];
     if (shape == null || i == index) {
 
       heartBeatY = bpm_values[i]; 
       time_diff = (int) values_type_time[i];
       tempX = temperatures[i]; 
+
+      bpm = bpm_values[i]; 
+      time_diff = (int) values_type_time[i];
+      temp = temperatures[i];
 
       shape = loadCharShape(c);
       the_shape_modifier(shape, c);
@@ -374,36 +380,45 @@ void draw() {
       modified_shapes[i] = shape;
     }
 
-    if (index == 10) {
-      println("a");
+
+
+    float rest_of_word_width = 0;//textWidth(rest_word);
+
+    for (int j = 0; j < rest_word.length(); j++) {
+      //text(rest_word.charAt(j), 20, 20);
+      char cc = rest_word.charAt(j);
+      
+      if (cc == '\0') {
+        break; 
+      }
+      
+      println("rest_word: "+rest_word);
+      PShape shape2 = loadCharShape(cc);
+      the_shape_modifier(shape2, cc);
+      scale_PShape(shape2, 1.0/shape2.height);
+      scale_PShape(shape2, draw_shape_scale);
+          
+      rest_of_word_width += shape_width(shape2) * 1.1;
     }
+    
+    println("rest_of_word_width: "+rest_of_word_width);
+
+
+    if (cursor_x + rest_of_word_width > plot_x2 ) {
+      // ga naar nieuwe regel
+      cursor_y += draw_shape_scale * leading;
+      // en zet x weer naar het begin (plot_x1)
+      cursor_x = plot_x1;
+    }
+
+
 
     if (cursor_x + shape.width > plot_x2) {
       cursor_x = plot_x1;
       cursor_y += draw_shape_scale * leading;
     }
 
-    // vakantie
-    // v -> akantie
-    // string woord = vakantie (of array)
-    /*
-    String woord = "";
-     Daar steeds letters aan toevoegen tot het een enter is of een spatie.
-     float legth = 0;
-     for (int j = 0; j < woord.legth; j++
-     char c = woord[j];
-     legth += shape_width(load(c));
-     }
-     // nu weet je lengte woord
-     
-     if (cursor_x + lengte woord > plot_x2) {
-     cursor_x = plot_x1;
-     cursor_y += draw_shape_scale * 0.5;
-     }
-     
-     
-     
-     */
+
 
 
     float x = cursor_x;
@@ -415,13 +430,6 @@ void draw() {
     strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
     strokeWeight *= draw_shape_scale; 
 
-    //temperatures[i] = norm(constrain(temp, min_temperature, max_temperature), min_temperature, max_temperature); 
-
-    //      tempatures[..] = 0.3
-    //      tempatures[..] = 0.4
-    //      tempatures[..] = 0.33
-    //      tempatures[..] = 0.55
-    //      tempatures[..] = 0.22
 
     println("t "+tempX);
 
@@ -529,64 +537,6 @@ int index_in_allowed_chars(char c) {
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-int last_keypressed_frameCount = -1; // used to avoid running keyPressed more than once in one frame
-
-void keyPressed() {
-
-  if (last_keypressed_frameCount == frameCount) return;
-  last_keypressed_frameCount = frameCount;
-
-  if (keyPressed(CONTROL)) {
-
-    if (keyPressed('w') || keyPressed('W')) {
-      if (show_shapeframe == true) {
-        show_shapeframe = false;
-      } else {
-        show_shapeframe = true;
-      }
-    } else if (keyPressed('s') || keyPressed('S')) {
-      println("export");  
-      println(key);
-      export();
-      ask_for_email = true;
-    }
-  } else if (ask_for_email) {
-    if (key == '\n') {
-      ask_for_email = false;
-    } else if (key == ' ') {
-      return;
-    } else {
-      email_adress += key;
-    }
-  } else if (char_ok(key)) {
-    index++;
-    typed_chars[index] = key;
-    //update_cursor_position();
-    if (mode != M_ANIMATE_1) {
-      time_diff = millis() - last_millis;
-      last_millis = millis();
-    }
-  } else if (key == BACKSPACE) {
-    //cursor_x -= current_modified_shape.getWidth() + kerning;
-    index--;
-    if (index < -1) {
-      index = -1;
-    }
-  }
-
-
-  if (keyPressed(CONTROL) && (keyPressed('d') || keyPressed('D'))) {
-    for (int i=0; i < index+1; i++) {
-      modified_shapes[i] = null;
-    }
-    index = -1;
-  }
-}
-
-
-
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
 boolean char_ok(char c) {
   for (int i = 0; i < allowed_chars.length; i++) {
     if (allowed_chars[i] == c) return true;
@@ -624,267 +574,12 @@ PShape loadCharShape(char c) {
   return shape;
 }
 
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-
-/*
-void shape_modifier1(PShape shape, float bpm, float temp, int mouse_x, int mouse_y) {
- 
- 
- }
- */
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 boolean has_typed_something() {
   return index >= 0;
 }
-
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-
-//void update_cursor_position() {
-//  if (current_modified_shape != null) {
-//    cursor_x += current_modified_shape.getWidth() + kerning;
-//    println("width" +current_modified_shape.getWidth());
-//    if (cursor_x + 0 > (width-100)) {
-//      cursor_x = 50;
-//      cursor_y += 850 * scale;
-//    }
-//  }
-//}
-
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-//void export() {
-
-//  f = new Fontastic(this, "MadelonFont");
-//  f.setAuthor("Madelon Balk");
-
-//  if (has_typed_something()) {
-//    println("starting export");
-
-
-
-//    for (int i = 0; i < allowed_chars.length; i++) {
-
-
-//      //char c = typed_chars[index];
-//      char c = allowed_chars[i];
-//      // check enter
-
-
-
-//      PShape shape = loadCharShape(c);
-
-//      if (shape == null) {
-//        continue;
-//      }
-
-//      the_shape_modifier(shape);
-//      PShape modified_shape = shape;
-//      // draw on PGraphics
-//      pg_blob.beginDraw();
-//      pg_blob.background(255);
-
-//      if (c == 'a') {
-//        println("shape width: "+modified_shape.width);
-//        println("shape height: "+modified_shape.height);
-//        debug_print(modified_shape);
-//      }
-
-//      //pg_blob.shape(modified_shape, cursor_x ...y);
-//      pg_blob.shape(modified_shape, 0, 0, pg_blob.width, pg_blob.height);
-//      pg_blob.endDraw();
-
-//      pg_blob.save("../debug/blob/"+c+".png");
-//      println(cursor_x, cursor_y);
-
-//      image(pg_blob, 0, 0, width, height);
-
-//      // blobscan
-//      theBlobDetection.setPosDiscrimination(false);
-//      theBlobDetection.setThreshold(0.38f);
-//      theBlobDetection.computeBlobs(pg_blob.pixels);
-
-//      // create glyph
-//      FGlyph glyph = f.addGlyph(c);
-
-//      // blobs to PVector[]
-//      for (int n=0; n<theBlobDetection.getBlobNb(); n++) {
-//        Blob b = theBlobDetection.getBlob(n);
-//        if (b!=null) {
-//          PVector[] vecs = blob_to_PVector_array(b);
-//          for (PVector v : vecs) {
-//            v.x *= pg_blob.width;
-//            v.y *= pg_blob.height;
-//          }
-
-//          // add contour
-//          glyph.addContour(vecs);
-//        }
-//      }
-//    }
-//    // finish exporting font
-
-//    f.buildFont();                                  // Build the font resulting in .ttf and .woff files
-//    // and a HTML template to preview the WOFF
-//    //How to clean up afterwards:
-
-//    f.cleanup();                  // Deletes all the files that doubletype created, except the .ttf and
-//    // .woff files and the HTML template
-//  }
-//}
-
-
-
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-
-
-int scan_id = 1;
-
-void export() {
-
-  //colorMode(RGB, 255, 255, 255);
-
-  f = new Fontastic(this, "MadelonFont"+hour()+""+second());
-  f.setAuthor("Madelon Balk");
-
-  // init BlobDetection
-  ThresholdChecker thresholdChecker = new ThresholdChecker() {
-    public boolean result_of(int c) {
-      //                 green < 128
-      return green(c) < 128;
-    }
-  };
-
-  ContourData contour_data = new ContourData();
-  contour_data.edge_indexes = new int[(pg_blob.width*pg_blob.height)/2];
-  contour_data.corner_indexes = new int[(pg_blob.width*pg_blob.height)/2];
-
-  int[] contour_map = new int[pg_blob.width*pg_blob.height];
-
-
-  if (has_typed_something()) {
-    println("starting export");
-
-    for (int i = 0; i < allowed_chars.length; i++) {
-
-      char c = allowed_chars[i];
-
-      PShape shape = loadCharShape(c);
-
-      if (shape == null) {
-        continue;
-      }
-
-      the_shape_modifier(shape, c);
-
-      scale_PShape(shape, 1.0/shape.height);
-      scale_PShape(shape, pg_blob.height);
-
-      println(pg_blob.height);
-
-      final PShape modified_shape = shape;
-      // draw on PGraphics
-      pg_blob.beginDraw();
-      pg_blob.background(255);
-
-
-      if (c == 'a') {
-        println("shape width: "+modified_shape.width);
-        println("shape height: "+modified_shape.height);
-        debug_print(modified_shape);
-      }
-      //pg_blob.strokeWeight(1);
-      pg_blob.strokeWeight(1);
-      pg_blob.shapeMode(CENTER);
-      pg_blob.stroke(0);
-      //int str_mar = 40+2;
-      //pg_blob.shape(modified_shape, +str_mar, +str_mar, pg_blob.width-str_mar, pg_blob.height-str_mar);
-      pg_blob.shape(modified_shape, pg_blob.width/2, pg_blob.height/2);
-
-      // create border for blobscan
-      pg_blob.noFill();
-      pg_blob.stroke(255);
-      pg_blob.strokeWeight(1);
-      pg_blob.rect(0, 0, pg_blob.width-1, pg_blob.height-1);
-
-      pg_blob.endDraw();
-
-      if (DEBUG) {
-        pg_blob.save("../debug/blob/"+c+".png");
-      }
-
-      pg_blob.loadPixels();
-
-      // blobscan
-      /*
-      theBlobDetection.setPosDiscrimination(false);
-       theBlobDetection.setThreshold(0.38f);
-       theBlobDetection.computeBlobs(pg_blob.pixels);
-       */
-
-
-
-      // create the glyph
-      final FGlyph glyph = f.addGlyph(c);
-
-      glyph.setAdvanceWidth((int)modified_shape.width);
-
-      ContourDataProcessor contour_data_processor = new ContourDataProcessor() {
-
-        public boolean process(ContourData contour_data) {
-          //create a contour
-          PVector[] contour = new PVector[contour_data.n_of_corners];
-          for (int i = 0; i < contour_data.n_of_corners; i++) {
-            int index = contour_data.corner_indexes[i];
-            float x = index % pg_blob.width;
-            float y = (index - x) / pg_blob.width;
-            // normalise
-            x /= pg_blob.width;
-            y /= pg_blob.height;
-            y = 1-y; // flip upside down
-
-            x *= modified_shape.width;
-            y *= modified_shape.height;
-
-            contour[i] = new PVector(x * 500, y * 500);
-          }
-
-          // douglass peucker goes here
-          // ...
-          glyph.addContour(contour);
-
-          return true; // true means continue scanning
-        }
-      };
-
-      int y_increment = 5;
-
-      BlobScanner.scan(
-        pg_blob.pixels, pg_blob.width, pg_blob.height, 
-        0, 0, pg_blob.width, pg_blob.height, 
-        y_increment, 
-        thresholdChecker, 
-        contour_map, 
-        scan_id++, 
-        contour_data, 
-        contour_data_processor);
-    }
-
-    // finish exporting font
-
-    f.buildFont();                                  // Build the font resulting in .ttf and .woff files
-    // and a HTML template to preview the WOFF
-    //How to clean up afterwards:
-
-    f.cleanup();                  // Deletes all the files that doubletype created, except the .ttf and
-    // .woff files and the HTML template
-  }
-}
-
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -900,28 +595,6 @@ void debug_print(PShape shape) {
 }
 
 
-
-//PVector[] blob_to_PVector_array(Blob the_blob) {
-
-//  PVector[] result = new PVector[the_blob.getEdgeNb()*2];
-
-//  int index = 0;
-
-//  for (int i = 0; i<the_blob.getEdgeNb(); i++) {
-//    EdgeVertex a = the_blob.getEdgeVertexA(i);
-//    EdgeVertex b = the_blob.getEdgeVertexB(i);
-
-//    PVector v1 = new PVector(a.x, a.y);
-//    PVector v2 = new PVector(b.x, b.y);
-
-//    result[index] = v1;
-//    index += 1;
-//    result[index] = v2;
-//    index += 1;
-//  }
-
-//  return result;
-//}
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -1003,38 +676,18 @@ void mousePressed() {
   record = true;
 }
 
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-// Multiple key presses
+String rest_word(String s, int start_index) {
+  String result = "";
 
-boolean[] keys = new boolean[1<<020];
-
-public boolean keyPressed(int c) {
-  return keys[c];
+  for (int i = start_index; i < s.length(); i++) {
+    char c = s.charAt(i);
+    if (c == ' ' || c == '-' || c == '\n') {
+      break;
+    }
+    result += c;
+  } 
+  return result;
 }
-
-public boolean keyPressed(char c) {
-  c = Character.toUpperCase(c);
-  int index = (int)c;
-  return keys[index];
-}
-
-protected void handleKeyEvent(KeyEvent event) {
-
-  //key = event.getKey();
-  keyCode = event.getKeyCode();
-
-  // we could also create a bigger array so function keys will work
-  // if (keyCode < 256) {
-  if (event.getAction() == KeyEvent.PRESS) {
-    keys[keyCode] = true;
-  } else if (event.getAction() == KeyEvent.RELEASE) {
-    keys[keyCode] = false;
-  }
-  //}
-
-  super.handleKeyEvent(event);
-}
-// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

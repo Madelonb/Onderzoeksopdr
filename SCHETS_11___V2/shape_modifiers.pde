@@ -112,7 +112,7 @@ void normalize(PShape s) {
 }
 
 void vector_modifier2(PVector v, char c) {
-    
+
   key_timediff_map = map(constrain(time_diff, 20, 500), 20, 500, 0.75, 2);
   v.y -= base_line;
   v.y = v.y * heartBeatY;
@@ -133,7 +133,7 @@ void vector_modifier2(PVector v, char c) {
     v.x = v.x + tempX;
     //v.x += tempX * draw_shape_scale;
   }
-  
+
 
 
 
