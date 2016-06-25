@@ -20,7 +20,7 @@ final int M_USER_MODE = 0;
 final int M_ANIMATE_1 = 1;
 final int M_ANIMATE_2 = 2;
 
-int mode = M_USER_MODE;
+int mode = M_ANIMATE_1;
 
 
 
@@ -97,19 +97,19 @@ String debug_str;
 
 float strokeWeight;
 
-char[] animated_chars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}; 
+char[] animated_chars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}; 
 int animated_char_index = 0;
 
 
 void setup() {
-  size(707, 700);
+  size(707, 1000);
   frameRate(30);
   noCursor();
   plot_x1 = 50;
   plot_y1 = 50;
   plot_x2 = width-plot_x1;
   plot_y2 = height-plot_y1;
-  basic = createFont("FaktPro-Normal.ttf", 12);
+  basic = createFont("FaktPro-Normal.ttf", 14);
   //noCursor();
 
   //theBlobDetection = new BlobDetection(1000, 2000);
@@ -136,7 +136,7 @@ void setup() {
     float s_width = shape_width(s);
     original_width_chars[i] = s_width;
 
-    println(c, original_width_chars[i]);
+    //println(c, original_width_chars[i]);
   }
 
 
@@ -145,9 +145,9 @@ void setup() {
   }  
   if (mode == M_ANIMATE_1) {
     index = 0;
-    typed_chars[0] = 'w';
-    draw_shape_scale = 500;
-  }  
+    typed_chars[0] = 'a';
+    draw_shape_scale = 850;
+  } 
   if (mode == M_ANIMATE_2) {
   }
 }
@@ -156,8 +156,9 @@ void setup() {
 
 void draw() {
 
+
   if (mode == M_ANIMATE_2) {
-    if (frameCount % 60 == 0) {
+    if (frameCount % 3 == 0) {
       index++;
       typed_chars[index] = 'a';
     }
@@ -182,7 +183,7 @@ void draw() {
   //  }
   //}
 
-  draw_shape_scale = constrain(draw_shape_scale, 100, 500);
+  draw_shape_scale = constrain(draw_shape_scale, 100, 900);
 
   if (keyPressed(CONTROL) && (keyPressed('='))) {
     draw_shape_scale += 10;
@@ -218,7 +219,7 @@ void draw() {
 
       timer = millis();
     }
-  } else if (mode == M_ANIMATE_1) {
+  } else if ((mode == M_ANIMATE_1) || (mode == M_ANIMATE_2)) {
 
     bpm = bpm + bpmSpeed;
     temp = temp + tempSpeed;
@@ -269,7 +270,7 @@ void draw() {
     //  typed_chars[index] = 'b';
     //}
 
-    println(force);
+    //println(force);
     if (force == 1024) {
       println("force == 1024");
       animated_char_index += 1;
@@ -340,8 +341,8 @@ void draw() {
   float cursor_y;
 
   if (mode == M_ANIMATE_1) {
-    cursor_x = 300;
-    cursor_y = 75;
+    cursor_x = width/2;
+    cursor_y = 50;
   } else {
     cursor_x = plot_x1;
     cursor_y = plot_y1 - draw_shape_scale * 0.3;
@@ -350,7 +351,16 @@ void draw() {
 
   for (int i = 0; i <= index; i++) {
 
+    if (cursor_y > (plot_y2-75)) {
+      index = index - 1;
+      break;
+    }
+
+    println("cursor_y "+cursor_y);
+
     char c = typed_chars[i];
+
+
     if (c == '\n') {
       cursor_x = plot_x1;
       cursor_y += draw_shape_scale * leading;
@@ -384,24 +394,24 @@ void draw() {
 
     float rest_of_word_width = 0;//textWidth(rest_word);
 
-    for (int j = 0; j < rest_word.length(); j++) {
-      //text(rest_word.charAt(j), 20, 20);
-      char cc = rest_word.charAt(j);
-      
-      if (cc == '\0') {
-        break; 
-      }
-      
-      println("rest_word: "+rest_word);
-      PShape shape2 = loadCharShape(cc);
-      the_shape_modifier(shape2, cc);
-      scale_PShape(shape2, 1.0/shape2.height);
-      scale_PShape(shape2, draw_shape_scale);
-          
-      rest_of_word_width += shape_width(shape2) * 1.1;
-    }
-    
-    println("rest_of_word_width: "+rest_of_word_width);
+    //for (int j = 0; j < rest_word.length(); j++) {
+    //  //text(rest_word.charAt(j), 20, 20);
+    //  char cc = rest_word.charAt(j);
+
+    //  if (cc == '\0') {
+    //    break;
+    //  }
+
+    //  //println("rest_word: "+rest_word);
+    //  PShape shape2 = loadCharShape(cc);
+    //  the_shape_modifier(shape2, cc);
+    //  scale_PShape(shape2, 1.0/shape2.height);
+    //  scale_PShape(shape2, draw_shape_scale);
+
+    //  rest_of_word_width += shape_width(shape2) * 1.1;
+    //}
+
+    //println("rest_of_word_width: "+rest_of_word_width);
 
 
     if (cursor_x + rest_of_word_width > plot_x2 ) {
@@ -412,11 +422,13 @@ void draw() {
     }
 
 
-
-    if (cursor_x + shape.width > plot_x2) {
-      cursor_x = plot_x1;
-      cursor_y += draw_shape_scale * leading;
+    if (mode != M_ANIMATE_1) {
+      if (cursor_x + shape.width > plot_x2) {
+        cursor_x = plot_x1;
+        cursor_y += draw_shape_scale * leading;
+      }
     }
+
 
 
 
@@ -431,7 +443,6 @@ void draw() {
     strokeWeight *= draw_shape_scale; 
 
 
-    println("t "+tempX);
 
     strokeWeight(strokeWeight);
     stroke(0);
@@ -461,12 +472,37 @@ void draw() {
     //if (i > 0) {
     //float temperature_prev = temperatures[i];
 
+    if (temperatures[i] < 27) {
+      if (values_type_time[i] > 150) {
+        kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.05, 0.03) * draw_shape_scale;
+      } else {
+        kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.03, 0.03) * draw_shape_scale;
+      }
+    } else {
+      kerning = 0.03 * draw_shape_scale;
+    }
 
-    kerning = map(constrain(temperatures[i], min_temperature, 30), min_temperature, 30, -0.02, 0.03) * draw_shape_scale;
+    char next_char = typed_chars[i+1];
+    if (c != '\0' && c != ' ' && c != '\n') {
+      if ((c == 'A' && next_char == 'V') || (c == 'V' && next_char == 'A')) {
+        if (values_type_time[i] < 150) {
+          kerning = -0.03 * draw_shape_scale;
+        } else {
+          kerning = -0.06 * draw_shape_scale;
+        }
+      }
+    }
 
 
     //cursor_x +=  shape_width(shape) * kerning;
     cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
+
+
+    //float prev_char = typed_chars[i-1];
+
+
+    //prev_char = c;
+
 
 
 
@@ -513,7 +549,7 @@ void draw() {
   //  saveFrame("../MOVIEMAKER/frame-####.tif");
   //}
 
-  //saveFrame("../MOVIEMAKER/frame-####.tif");
+  saveFrame("../MOVIEMAKER/frame-####.tif");
 
 
   if (DEBUG) {
