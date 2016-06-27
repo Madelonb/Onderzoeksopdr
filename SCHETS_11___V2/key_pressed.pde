@@ -72,10 +72,7 @@ void keyPressed() {
 
 
   if (keyPressed(CONTROL) && (keyPressed('d') || keyPressed('D'))) {
-    for (int i=0; i < index+1; i++) {
-      modified_shapes[i] = null;
-    }
-    index = -1;
+    clear();
   }
 }
 

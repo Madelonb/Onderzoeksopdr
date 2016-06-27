@@ -66,7 +66,7 @@ PGraphics pg_blob;
 PFont basic;
 
 
-int time_diff;
+int time_diff = 50;
 int last_millis;
 int timer = millis();
 
@@ -115,11 +115,15 @@ String fill_in_email = "";
 
 int line_count;
 
+float line_y_max;
+float last_line_y_max;
+float line_x_max;
+
 
 
 
 void setup() {
-  size(800, 600);
+  size(707, 1000);
   //fullScreen();
   frameRate(30);
   noCursor();
@@ -163,13 +167,13 @@ void setup() {
   }  
   if (mode == M_ANIMATE_1) {
     index = 0;
-    typed_chars[0] = 'a';
+    typed_chars[0] = 'T';
     draw_shape_scale = 850;
   } 
   if (mode == M_ANIMATE_2) {
     //typed_chars[0] = 'a';
     //typed_chars[1] = 'b';
-    draw_shape_scale = 100;
+    draw_shape_scale = 150;
   }
 }
 
@@ -177,7 +181,11 @@ void setup() {
 
 void draw() {
 
-  line_count = 0;
+
+  if (line_y_max != last_line_y_max) {
+    line_count++;
+    last_line_y_max = line_y_max;
+  }
 
   if (mode == M_ANIMATE_2) {
     if (frameCount % 3 == 0) {
@@ -185,25 +193,67 @@ void draw() {
       typed_chars[index] = animated_chars[animated_char_index];
     }
 
-    if (mode == M_ANIMATE_2) {
-      temp = temp + tempSpeed;
-      time_diff = time_diff + timediffSpeed;
-      bpm += bpmSpeed;
-      if (line_count == 0) {
-        timediffSpeed = 0;
-        bpmSpeed = 1;
-      }
-      if (line_count == 1) {
+    temp = constrain(temp + tempSpeed, 25, 35);
+    time_diff = constrain(time_diff + timediffSpeed, 50, 500);
+    bpm = constrain(bpm + bpmSpeed, 50, 120);
+
+    if (line_count % 3 == 0) {
+      timediffSpeed = 0;
+      bpmSpeed = 2;
+      if (line_x_max > width/2) {
         bpmSpeed = 0;
-        tempSpeed = -1;
-      }
-      if (line_count == 2) {
-        tempSpeed = 0;
-        timediffSpeed = 2;
-        force += 200;
+        tempSpeed = -0.3;
       }
     }
+    if (line_count % 3 == 1) {
+      tempSpeed = 0;
+      timediffSpeed = 20;
+      if (line_x_max > width/2) {
+        timediffSpeed = 0;
+        bpmSpeed = -3;
+      }
+    }
+    if (line_count % 3 == 2) {
+      bpmSpeed = 0;
+      tempSpeed = 0.3;
+      if (line_x_max > width/2) {
+        tempSpeed = 0;
+        timediffSpeed = -20;
+      }
+    }
+
+    if (line_count == 3) {
+      force = 250;
+    }
+    //if (line_count == 6) {
+    //  force = 450;
+    //}
+    //if (line_count == 9) {
+    //  force = 650;
+    //}
+    //if (line_count == 12) {
+    //  force = 850;
+    //}
+
+
+    if (line_count == 6){
+      clear();
+      animated_char_index += 1;
+      force = 50;
+      bpm = 50;
+      temp = 30;
+      line_count = -1;
+    }
+
+    println("linecount "+line_count);
   }
+
+
+
+
+
+
+
 
 
   debug_str = "";
@@ -483,18 +533,20 @@ void draw() {
 
     if (mode == M_ANIMATE_2) {
       if (cursor_y != last_cursor_y && last_cursor_y != -1) {
-        if (line_count % 3 == 0) {
-          line_count = 0;
-        }
-        if (line_count % 3 == 1) {
-          line_count = 1;
-        }
-        if (line_count % 3 == 2) {
-          line_count = 2;
-        }
-        line_count++;
+        //if (line_count % 3 == 0) {
+        //  line_count = 0;
+        //}
+        //if (line_count % 3 == 1) {
+        //  line_count = 1;
+        //}
+        //if (line_count % 3 == 2) {
+        //  line_count = 2;
+        //}
+        //line_count++;
       }
     }
+
+
 
 
 
@@ -522,7 +574,7 @@ void draw() {
 
 
     strokeWeight(strokeWeight);
-    stroke(255);
+    stroke(0);
     strokeCap(SQUARE);
     strokeJoin(BEVEL);
     noFill();
@@ -675,7 +727,7 @@ void draw() {
 
   // PRINT THE DATA AND VARIABLE VALUES
   textAlign(LEFT, BOTTOM);
-  fill(255);
+  fill(0);
   textFont(basic);
   String temperature = nfc(temp, 1);
   //textAlign(CENTER);
@@ -696,7 +748,7 @@ void draw() {
 
   //saveFrame("../MOVIEMAKER/frame-#######.tif");
 
-  println("!!!! "+line_count);
+  //println("!!!! "+line_count);
 
   if (DEBUG) {
     fill(0);
@@ -704,10 +756,26 @@ void draw() {
     debug_str = "";
     text(debug_str, width-100, 50);
   }
+
+  line_y_max = cursor_y;
+  if (frameCount == 1) {
+    last_line_y_max = line_y_max;
+  }
+
+  line_x_max = cursor_x;
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+void clear() {
+  for (int i=0; i < index+1; i++) {
+    modified_shapes[i] = null;
+  }
+  index = -1;
+}
+
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 int index_in_allowed_chars(char c) {
   for (int i = 0; i < allowed_chars.length; i++) {

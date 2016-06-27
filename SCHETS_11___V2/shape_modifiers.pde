@@ -2,6 +2,7 @@
 void the_shape_modifier(PShape shape, char c) {
   //scale_PShape(shape, scale);
   shape_modifier2(shape, c);
+  println(time_diff);
 }
 
 
