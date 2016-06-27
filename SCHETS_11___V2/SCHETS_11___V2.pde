@@ -113,6 +113,8 @@ float cursor_y;
 boolean ask_for_email = false;
 String fill_in_email = "";
 
+int line_count = 0;
+
 
 
 
@@ -242,7 +244,7 @@ void draw() {
 
       timer = millis();
     }
-  } else if ((mode == M_ANIMATE_1) || (mode == M_ANIMATE_2)) {
+  } else if (mode == M_ANIMATE_1) {
 
     bpm = bpm + bpmSpeed;
     temp = temp + tempSpeed;
@@ -285,7 +287,7 @@ void draw() {
       timediffSpeed = 0;
       //tempSpeed = 0;
       bpmSpeed = 2;
-      //force += 200;
+      force += 200;
     }
 
     force = constrain(force, 0, 1024);
@@ -301,7 +303,7 @@ void draw() {
       modified_shapes[index] = null;
       force = 50;
     }
-  } else if (!USE_ARDUINO) {
+  } else if ((!USE_ARDUINO) && (mode != M_ANIMATE_2)) {
     temp = map(constrain(mouseX, 0, width), 0, width, 25, 35);
     bpm = map(constrain(mouseY, 0, height), 0, height, 120, 50);
 
@@ -369,6 +371,9 @@ void draw() {
     cursor_x = plot_x1;
     cursor_y = plot_y1 - draw_shape_scale * 0.3;
   }
+
+  float last_cursor_x = -1;
+  float last_cursor_y = -1;
 
 
   for (int i = 0; i <= index; i++) {
@@ -438,9 +443,8 @@ void draw() {
       cursor_y += draw_shape_scale * leading;
       // en zet x weer naar het begin (plot_x1)
       cursor_x = plot_x1;
-      
-     force += 200;
 
+      // force += 200;
     }
 
 
@@ -448,17 +452,43 @@ void draw() {
       if (cursor_x + shape.width > plot_x2) {
         cursor_x = plot_x1;
         cursor_y += draw_shape_scale * leading;
-             force += 200;
-
+        //force += 200;
       }
     }
 
 
-
-
-
     float x = cursor_x;
     float y = cursor_y;
+
+
+    if (mode == M_ANIMATE_2) {
+      //println("linecount "+line_count);
+      //bpmSpeed = 1;
+      //tempSpeed = 0;
+      //timediffSpeed = 0;
+      bpm += bpmSpeed;
+      if (cursor_y != last_cursor_y && last_cursor_y != -1) {
+        if (line_count == 0) {
+          timediffSpeed = 0;
+          bpmSpeed = 1;
+        }
+        if (line_count == 1) {
+          bpmSpeed = 0;
+          tempSpeed = -1;
+        }
+        if (line_count == 2) {
+          tempSpeed = 0;
+          timediffSpeed = 2;
+          force += 200;
+          line_count = 0;
+        } 
+        line_count++;
+        println ("last cursor_y "+last_cursor_y);
+        println ("cursor_y "+cursor_y);
+      }
+    }
+
+
 
     if (cursor_y > (plot_y2-75)) {
       index = index - 1;
@@ -622,6 +652,9 @@ void draw() {
 
       //text(difference_width, x + (shape.width/2), y);
     }
+
+    last_cursor_x = cursor_x;
+    last_cursor_y = cursor_y;
   }
   //}
 
