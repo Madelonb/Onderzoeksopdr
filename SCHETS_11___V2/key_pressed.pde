@@ -47,6 +47,9 @@ void keyPressed() {
       }
     }
   } else if (char_ok(key)) {
+    
+    println(key);
+    
     index++;
     typed_chars[index] = key;
     //update_cursor_position();
@@ -55,6 +58,10 @@ void keyPressed() {
       time_diff = constrain(time_diff, 50, 500);
       last_millis = millis();
     }
+    
+    String s = new String(typed_chars);
+    println(s);
+    
   } else if (key == BACKSPACE) {
     //cursor_x -= current_modified_shape.getWidth() + kerning;
     index--;

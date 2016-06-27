@@ -41,7 +41,7 @@ final int MAX_SIZE = 2048;
 Serial port;
 
 
-char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n', '&', '@', ';', ':', '#', '(', ')'};
+char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n', '&', '@', ';', '#', '(', ')', ':', '\''};//, '"'};
 
 float[] original_width_chars = new float[allowed_chars.length];
 
@@ -117,7 +117,8 @@ String fill_in_email = "";
 
 
 void setup() {
-  size(707, 1000);
+  size(800, 600);
+  //fullScreen();
   frameRate(30);
   noCursor();
   plot_x1 = 50;
@@ -284,7 +285,7 @@ void draw() {
       timediffSpeed = 0;
       //tempSpeed = 0;
       bpmSpeed = 2;
-      force += 200;
+      //force += 200;
     }
 
     force = constrain(force, 0, 1024);
@@ -437,6 +438,9 @@ void draw() {
       cursor_y += draw_shape_scale * leading;
       // en zet x weer naar het begin (plot_x1)
       cursor_x = plot_x1;
+      
+     force += 200;
+
     }
 
 
@@ -444,6 +448,8 @@ void draw() {
       if (cursor_x + shape.width > plot_x2) {
         cursor_x = plot_x1;
         cursor_y += draw_shape_scale * leading;
+             force += 200;
+
       }
     }
 
@@ -467,195 +473,195 @@ void draw() {
         index = -1;
       }
     }
-  
-
-
-  debug_str += x + "\t\t"+ y + "\n";
-
-  strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
-  strokeWeight *= draw_shape_scale; 
 
 
 
-  strokeWeight(strokeWeight);
-  stroke(0);
-  strokeCap(SQUARE);
-  strokeJoin(BEVEL);
-  noFill();
+    debug_str += x + "\t\t"+ y + "\n";
 
-  if (mode == M_ANIMATE_1) {
-    float half_width = shape_width(shape) / 2;
-    shape(shape, x-half_width, y);
-  } else {
-    shape(shape, x, y);
-  }
-
-  // unused
-  positions_xy[i][X] = x;
-  positions_xy[i][Y] = y;
-
-  cursor_x += shape_width(shape);
-
-  // adjust kerning
-  //float new_width = shape_width(shape) * (1.0 / shape.height);
-  //float difference_width = new_width - original_width_chars[index_in_allowed_chars(c)];
-  //cursor_x -= shape_width(shape) * difference_width;
-  //cursor_x += draw_shape_scale * 0.05;
-
-  //if (i > 0) {
-  //float temperature_prev = temperatures[i];
-
-  //if (temperatures[i] < 27) {
-  //  if (values_type_time[i] > 150) {
-  //    kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.05, 0.03) * draw_shape_scale;
-  //  } else {
-  //    kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.03, 0.03) * draw_shape_scale;
-  //  }
-  //} else {
-  //  kerning = 0.03 * draw_shape_scale;
-  //}
-
-  char next_char = typed_chars[i+1];
-
-  if (temperatures[i] < 30) {
-
-
-    kerning_factor_timediff = map(constrain(values_type_time[i], 30, 600), 100, 500, 0.5, 1); 
-    //kerning = map(temperatures[i], min_temperature, max_temperature, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
+    strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
+    strokeWeight *= draw_shape_scale; 
 
 
 
-    // meer ruimte nodig achter de letter
-    if (c == 'b' || c == 'f' || c == 'i' || c == 'k' || c == 'l' || c == 'p' || c == 't' || c == 'v' || c == 'w') {
-      kerning = map(temperatures[i], min_temperature, 29, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
+    strokeWeight(strokeWeight);
+    stroke(255);
+    strokeCap(SQUARE);
+    strokeJoin(BEVEL);
+    noFill();
+
+    if (mode == M_ANIMATE_1) {
+      float half_width = shape_width(shape) / 2;
+      shape(shape, x-half_width, y);
     } else {
-      kerning = map(temperatures[i], min_temperature, 29, -0.05, 0.03) * draw_shape_scale * kerning_factor_timediff;
+      shape(shape, x, y);
     }
 
-    // meer ruimte nodig voor de letter
-    if ( next_char == 'l' || next_char == 'i' || next_char == 'k' || next_char == 'j' || next_char == ' ') {
-      kerning += 0.03 * draw_shape_scale;
-      //println("kerning "+kerning);
-    }
+    // unused
+    positions_xy[i][X] = x;
+    positions_xy[i][Y] = y;
+
+    cursor_x += shape_width(shape);
+
+    // adjust kerning
+    //float new_width = shape_width(shape) * (1.0 / shape.height);
+    //float difference_width = new_width - original_width_chars[index_in_allowed_chars(c)];
+    //cursor_x -= shape_width(shape) * difference_width;
+    //cursor_x += draw_shape_scale * 0.05;
+
+    //if (i > 0) {
+    //float temperature_prev = temperatures[i];
+
+    //if (temperatures[i] < 27) {
+    //  if (values_type_time[i] > 150) {
+    //    kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.05, 0.03) * draw_shape_scale;
+    //  } else {
+    //    kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.03, 0.03) * draw_shape_scale;
+    //  }
+    //} else {
+    //  kerning = 0.03 * draw_shape_scale;
+    //}
+
+    char next_char = typed_chars[i+1];
+
+    if (temperatures[i] < 30) {
+
+
+      kerning_factor_timediff = map(constrain(values_type_time[i], 30, 600), 100, 500, 0.5, 1); 
+      //kerning = map(temperatures[i], min_temperature, max_temperature, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
 
 
 
-
-
-    //      kerning = map(temperatures[i], min_temperature, 29, -0.07, 0.03) * draw_shape_scale * kerning_factor_timediff;
-  } else {
-    kerning = 0.03 * draw_shape_scale;
-  }
-
-  //println("kerning "+kerning);
-
-  if (temperatures[i] >= 30) {
-
-    if (c != '\0' && c != ' ' && c != '\n') {
-      if ((c == 'A' && next_char == 'V') || (c == 'V' && next_char == 'A')) {
-        if (values_type_time[i] < 150) {
-          kerning = -0.03 * draw_shape_scale;
-        } else {
-          kerning = -0.06 * draw_shape_scale;
-        }
-      }
       // meer ruimte nodig achter de letter
-      if (c == 'i' || c == 'l') {
-        kerning *= 1.2;
+      if (c == 'b' || c == 'f' || c == 'i' || c == 'k' || c == 'l' || c == 'p' || c == 't' || c == 'v' || c == 'w') {
+        kerning = map(constrain(temperatures[i], 25, 30), min_temperature, 29, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
+      } else {
+        kerning = map(constrain(temperatures[i], 25, 30), min_temperature, 29, -0.05, 0.03) * draw_shape_scale * kerning_factor_timediff;
       }
 
       // meer ruimte nodig voor de letter
-      if (next_char == 'r') {
-        kerning *= 1.2;
+      if ( next_char == 'l' || next_char == 'i' || next_char == 'k' || next_char == 'j' || next_char == ' ') {
+        kerning += 0.03 * draw_shape_scale;
+        //println("kerning "+kerning);
       }
 
-      // minder ruimte nodig achter de letter
-      if (c == 'r') {
-        if (next_char == 'k' || next_char == 'l' || next_char == 'm' || next_char == 'n') {
-          kerning *= 1;
-        } else {
-          kerning *= 0.2;
+
+
+
+
+      //      kerning = map(temperatures[i], min_temperature, 29, -0.07, 0.03) * draw_shape_scale * kerning_factor_timediff;
+    } else {
+      kerning = 0.03 * draw_shape_scale;
+    }
+
+    //println("kerning "+kerning);
+
+    if (temperatures[i] >= 30) {
+
+      if (c != '\0' && c != ' ' && c != '\n') {
+        if ((c == 'A' && next_char == 'V') || (c == 'V' && next_char == 'A')) {
+          if (values_type_time[i] < 150) {
+            kerning = -0.03 * draw_shape_scale;
+          } else {
+            kerning = -0.06 * draw_shape_scale;
+          }
         }
-      }
+        // meer ruimte nodig achter de letter
+        if (c == 'i' || c == 'l') {
+          kerning *= 1.2;
+        }
 
-      // minder ruimte nodig achter de letter
-      if (c == 'V' || c == 'W' || c == 'T') {
-        if (next_char != 'k' && next_char != 'l' && next_char != 'b' && next_char != 'K' && next_char != 'P' && next_char != 'h' && next_char != 'I' && next_char != 'r' && next_char != 't' && next_char != 'f' && next_char != 'i' && next_char != 'm' && next_char != 'n' && next_char != 'p' && next_char != 'u' && next_char != 'v' && next_char != 'w' && next_char != 'y') {
-          kerning -= 0.05 * draw_shape_scale;
+        // meer ruimte nodig voor de letter
+        if (next_char == 'r') {
+          kerning *= 1.2;
+        }
+
+        // minder ruimte nodig achter de letter
+        if (c == 'r') {
+          if (next_char == 'k' || next_char == 'l' || next_char == 'm' || next_char == 'n') {
+            kerning *= 1;
+          } else {
+            kerning *= 0.2;
+          }
+        }
+
+        // minder ruimte nodig achter de letter
+        if (c == 'V' || c == 'W' || c == 'T') {
+          if (next_char != 'k' && next_char != 'l' && next_char != 'b' && next_char != 'K' && next_char != 'P' && next_char != 'h' && next_char != 'I' && next_char != 'r' && next_char != 't' && next_char != 'f' && next_char != 'i' && next_char != 'm' && next_char != 'n' && next_char != 'p' && next_char != 'u' && next_char != 'v' && next_char != 'w' && next_char != 'y') {
+            kerning -= 0.05 * draw_shape_scale;
+          }
         }
       }
     }
+
+
+
+
+
+
+    //cursor_x +=  shape_width(shape) * kerning;
+    cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
+
+
+    //float prev_char = typed_chars[i-1];
+
+
+    //prev_char = c;
+
+
+
+
+    if (show_shapeframe) {
+      noFill();
+      stroke(i % 2 == 0 ? color(255, 0, 0) :  color(0, 0, 255));
+      strokeWeight(1);
+      rectMode(CORNER);
+      //println(shape.width);
+      rect(x, y, shape.width, shape.height);
+      line(x, y + shape.height * base_line, x + shape.width, y + shape.height * base_line);
+      line(x, y, x + shape.width, y + shape.height);
+
+      //text(difference_width, x + (shape.width/2), y);
+    }
+  }
+  //}
+
+
+
+
+
+
+  //text(index, 20, 100);
+
+  // PRINT THE DATA AND VARIABLE VALUES
+  textAlign(LEFT, BOTTOM);
+  fill(255);
+  textFont(basic);
+  String temperature = nfc(temp, 1);
+  //textAlign(CENTER);
+  text(temperature + "°C", lerp(plot_x1, plot_x2, 0.6), plot_y2);
+  //text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
+  text(time_diff +" ms/key", lerp(plot_x1, plot_x2, 0.3), plot_y2);
+  text(((int) bpm)+" BPM", plot_x2 - textWidth("XXX BPM"), plot_y2);
+  text("pressure "+((int) force), plot_x1, plot_y2);
+
+  if (record) {
+    endRecord();
+    record = false;
   }
 
+  //if (keyPressed(CONTROL) && (keyPressed('r') || keyPressed('R'))) {
+  //  saveFrame("../MOVIEMAKER/frame-####.tif");
+  //}
+
+  //saveFrame("../MOVIEMAKER/frame-#######.tif");
 
 
-
-
-
-  //cursor_x +=  shape_width(shape) * kerning;
-  cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
-
-
-  //float prev_char = typed_chars[i-1];
-
-
-  //prev_char = c;
-
-
-
-
-  if (show_shapeframe) {
-    noFill();
-    stroke(i % 2 == 0 ? color(255, 0, 0) :  color(0, 0, 255));
-    strokeWeight(1);
-    rectMode(CORNER);
-    //println(shape.width);
-    rect(x, y, shape.width, shape.height);
-    line(x, y + shape.height * base_line, x + shape.width, y + shape.height * base_line);
-    line(x, y, x + shape.width, y + shape.height);
-
-    //text(difference_width, x + (shape.width/2), y);
+  if (DEBUG) {
+    fill(0);
+    textAlign(LEFT, TOP);
+    debug_str = "";
+    text(debug_str, width-100, 50);
   }
-}
-//}
-
-
-
-
-
-
-//text(index, 20, 100);
-
-// PRINT THE DATA AND VARIABLE VALUES
-textAlign(LEFT, BOTTOM);
-fill(0);
-textFont(basic);
-String temperature = nfc(temp, 1);
-//textAlign(CENTER);
-text(temperature + "°C", lerp(plot_x1, plot_x2, 0.6), plot_y2);
-//text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
-text(time_diff +" ms/key", lerp(plot_x1, plot_x2, 0.3), plot_y2);
-text(((int) bpm)+" BPM", plot_x2 - textWidth("XXX BPM"), plot_y2);
-text("pressure "+((int) force), plot_x1, plot_y2);
-
-if (record) {
-  endRecord();
-  record = false;
-}
-
-//if (keyPressed(CONTROL) && (keyPressed('r') || keyPressed('R'))) {
-//  saveFrame("../MOVIEMAKER/frame-####.tif");
-//}
-
-//saveFrame("../MOVIEMAKER/frame-#######.tif");
-
-
-if (DEBUG) {
-  fill(0);
-  textAlign(LEFT, TOP);
-  debug_str = "";
-  text(debug_str, width-100, 50);
-}
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -695,14 +701,16 @@ PShape loadCharShape(char c) {
   if (cs.equals("@")) cs = "atsign";
   if (cs.equals(";")) cs = "dotcomma";
   if (cs.equals(":")) cs = "doubledot";
-  //if (cs.equals("'")) cs = "quotationmarkopen";
-  //if (cs.equals("'")) cs = "quotationmarkclosed";
+  if (cs.equals("'")) cs = "quotationmarkopen";
+  if (cs.equals("‘")) cs = "quotationmarkopen";
+  if (cs.equals("’")) cs = "quotationmarkclosed";
   if (cs.equals("#")) cs = "hashtag";
-  //if (cs.equals('"')) cs = "doublequotationmarkopen";
-  //if (cs.equals('"')) cs = "doublequotationmarkclosed";
+  if (cs.equals("“")) cs = "doublequotationmarkopen";
+  if (cs.equals("”")) cs = "doublequotationmarkclosed";
   if (cs.equals("(")) cs = "parenthesisopen";
   if (cs.equals(")")) cs = "parenthesisclosed";
   if (cs.toUpperCase().equals(cs)) cs = cs + cs;
+
 
 
   String file = cs+".svg";
@@ -895,4 +903,9 @@ void test() {
   catch (MessagingException e) {
     e.printStackTrace();
   }
+}
+
+
+void exit() {
+  println("exit");
 }
