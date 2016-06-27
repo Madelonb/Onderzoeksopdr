@@ -7,9 +7,7 @@ import javax.mail.*;
 String fill_in_email = "";
 String typed = "";
 boolean ask_for_email = false;
-
-
-
+String folder_name;
 
 
 
@@ -18,7 +16,7 @@ public static final Pattern VALID_EMAIL_ADDRESS_REGEX =
 
 void setup() {
   size(500, 300);
-  test();
+  
 }
 
 void draw() {
@@ -39,9 +37,16 @@ void keyPressed() {
 
   if (ask_for_email) {
     if (key == '\n') {
+      folder_name = "HumanType"+hour()+""+second();
       println(validate(fill_in_email));
       validate(fill_in_email);
       ask_for_email = false;
+      if (validate(fill_in_email)){
+      test();
+      println(fill_in_email);
+      println(dataPath(""));
+      println(folder_name);
+      }
 
       // opslaan
       // ...
@@ -94,20 +99,20 @@ void test() {
     Message message = new MimeMessage(session);
     message.setFrom(new InternetAddress(username));
     message.setRecipients(Message.RecipientType.TO, 
-      InternetAddress.parse("madelon.balk@gmail.com"));
+      InternetAddress.parse(fill_in_email));
     message.setSubject("Testing Subject");
     message.setText("PFA");
 
     MimeBodyPart messageBodyPart = new MimeBodyPart();
 
     Multipart multipart = new MimeMultipart();
-
+    
     messageBodyPart = new MimeBodyPart();
-    String file = "path of file to be attached";
-    String fileName = "attachmentName";
+    String file = dataPath("")+"/"+folder_name;
+    String fileName = folder_name;
     DataSource source = new FileDataSource(file);
     messageBodyPart.setDataHandler(new DataHandler(source));
-    //messageBodyPart.setFileName(fileName);
+    messageBodyPart.setFileName(fileName);
     multipart.addBodyPart(messageBodyPart);
 
     message.setContent(multipart);
@@ -124,15 +129,3 @@ void test() {
   
   
 }
-
-
-
-// VOOR IN HOOFDSCHETS (RESETTEN LETTERS):
-//void reset() {
-//  index = -1;
-//  for (int i ....
-//    modified_shapes[i] = null;
-
-//  typed = "";  
-
-//}
