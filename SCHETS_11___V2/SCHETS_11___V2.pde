@@ -113,7 +113,7 @@ float cursor_y;
 boolean ask_for_email = false;
 String fill_in_email = "";
 
-int line_count = 0;
+int line_count;
 
 
 
@@ -177,11 +177,31 @@ void setup() {
 
 void draw() {
 
+  line_count = 0;
 
   if (mode == M_ANIMATE_2) {
     if (frameCount % 3 == 0) {
       index++;
       typed_chars[index] = animated_chars[animated_char_index];
+    }
+
+    if (mode == M_ANIMATE_2) {
+      temp = temp + tempSpeed;
+      time_diff = time_diff + timediffSpeed;
+      bpm += bpmSpeed;
+      if (line_count == 0) {
+        timediffSpeed = 0;
+        bpmSpeed = 1;
+      }
+      if (line_count == 1) {
+        bpmSpeed = 0;
+        tempSpeed = -1;
+      }
+      if (line_count == 2) {
+        tempSpeed = 0;
+        timediffSpeed = 2;
+        force += 200;
+      }
     }
   }
 
@@ -462,29 +482,17 @@ void draw() {
 
 
     if (mode == M_ANIMATE_2) {
-      //println("linecount "+line_count);
-      //bpmSpeed = 1;
-      //tempSpeed = 0;
-      //timediffSpeed = 0;
-      bpm += bpmSpeed;
       if (cursor_y != last_cursor_y && last_cursor_y != -1) {
-        if (line_count == 0) {
-          timediffSpeed = 0;
-          bpmSpeed = 1;
-        }
-        if (line_count == 1) {
-          bpmSpeed = 0;
-          tempSpeed = -1;
-        }
-        if (line_count == 2) {
-          tempSpeed = 0;
-          timediffSpeed = 2;
-          force += 200;
+        if (line_count % 3 == 0) {
           line_count = 0;
-        } 
+        }
+        if (line_count % 3 == 1) {
+          line_count = 1;
+        }
+        if (line_count % 3 == 2) {
+          line_count = 2;
+        }
         line_count++;
-        println ("last cursor_y "+last_cursor_y);
-        println ("cursor_y "+cursor_y);
       }
     }
 
@@ -688,6 +696,7 @@ void draw() {
 
   //saveFrame("../MOVIEMAKER/frame-#######.tif");
 
+  println("!!!! "+line_count);
 
   if (DEBUG) {
     fill(0);
