@@ -4,13 +4,20 @@ import processing.serial.*;
 import processing.pdf.*;
 import com.github.lemmingswalker.*;
 import com.hamoid.*;
+import java.util.Properties;
+import javax.activation.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import javax.mail.*;
 
-boolean ask_for_email = false;
-String email_adress;
 
 final static boolean USE_ARDUINO = false;
 final boolean DEBUG= true;
 final boolean BACKGROUND_COLOR = true;
+
+public static final Pattern VALID_EMAIL_ADDRESS_REGEX = 
+  Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+
 
 //final boolean ANIMATE_SHAPE = false;
 
@@ -20,9 +27,7 @@ final int M_USER_MODE = 0;
 final int M_ANIMATE_1 = 1;
 final int M_ANIMATE_2 = 2;
 
-int mode = M_ANIMATE_1;
-
-
+int mode = M_ANIMATE_2;
 
 boolean simulate_bpm = false;
 boolean show_shapeframe = false;
@@ -36,7 +41,7 @@ final int MAX_SIZE = 2048;
 Serial port;
 
 
-char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n'};
+char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n', '&', '@', ';', ':', '#', '(', ')'};
 
 float[] original_width_chars = new float[allowed_chars.length];
 
@@ -100,6 +105,16 @@ float strokeWeight;
 char[] animated_chars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}; 
 int animated_char_index = 0;
 
+float kerning_factor_timediff;
+
+float cursor_x;
+float cursor_y;
+
+boolean ask_for_email = false;
+String fill_in_email = "";
+
+
+
 
 void setup() {
   size(707, 1000);
@@ -149,6 +164,9 @@ void setup() {
     draw_shape_scale = 850;
   } 
   if (mode == M_ANIMATE_2) {
+    //typed_chars[0] = 'a';
+    //typed_chars[1] = 'b';
+    draw_shape_scale = 100;
   }
 }
 
@@ -160,7 +178,7 @@ void draw() {
   if (mode == M_ANIMATE_2) {
     if (frameCount % 3 == 0) {
       index++;
-      typed_chars[index] = 'a';
+      typed_chars[index] = animated_chars[animated_char_index];
     }
   }
 
@@ -203,7 +221,11 @@ void draw() {
   debug_str += "fontsize: "+draw_shape_scale+"\n";
 
   if (ask_for_email) {
-    //text(email_adress, 100, 100);
+    fill(0);
+    stroke(255, 0, 0);
+    rect(50, 50, 400, 200);
+    fill(255);
+    text(fill_in_email, 70, 70);
   }
 
   //println(email_adress);
@@ -257,8 +279,8 @@ void draw() {
       tempSpeed = 0;
       timediffSpeed = -16;
     }
-    if (time_diff < 0) {
-      time_diff = 0;
+    if (time_diff < 50) {
+      time_diff = 50;
       timediffSpeed = 0;
       //tempSpeed = 0;
       bpmSpeed = 2;
@@ -272,7 +294,7 @@ void draw() {
 
     //println(force);
     if (force == 1024) {
-      println("force == 1024");
+      //println("force == 1024");
       animated_char_index += 1;
       typed_chars[index] = animated_chars[animated_char_index];
       modified_shapes[index] = null;
@@ -334,11 +356,10 @@ void draw() {
 
     popStyle();
   } else {
-    background(255);
+    background(0);
   }
 
-  float cursor_x;
-  float cursor_y;
+
 
   if (mode == M_ANIMATE_1) {
     cursor_x = width/2;
@@ -351,12 +372,9 @@ void draw() {
 
   for (int i = 0; i <= index; i++) {
 
-    if (cursor_y > (plot_y2-75)) {
-      index = index - 1;
-      break;
-    }
 
-    println("cursor_y "+cursor_y);
+
+    //println("cursor_y "+cursor_y);
 
     char c = typed_chars[i];
 
@@ -436,53 +454,103 @@ void draw() {
     float x = cursor_x;
     float y = cursor_y;
 
-
-    debug_str += x + "\t\t"+ y + "\n";
-
-    strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
-    strokeWeight *= draw_shape_scale; 
-
-
-
-    strokeWeight(strokeWeight);
-    stroke(0);
-    strokeCap(SQUARE);
-    strokeJoin(BEVEL);
-    noFill();
-
-    if (mode == M_ANIMATE_1) {
-      float half_width = shape_width(shape) / 2;
-      shape(shape, x-half_width, y);
-    } else {
-      shape(shape, x, y);
+    if (cursor_y > (plot_y2-75)) {
+      index = index - 1;
+      break;
     }
 
-    // unused
-    positions_xy[i][X] = x;
-    positions_xy[i][Y] = y;
-
-    cursor_x += shape_width(shape);
-
-    // adjust kerning
-    //float new_width = shape_width(shape) * (1.0 / shape.height);
-    //float difference_width = new_width - original_width_chars[index_in_allowed_chars(c)];
-    //cursor_x -= shape_width(shape) * difference_width;
-    //cursor_x += draw_shape_scale * 0.05;
-
-    //if (i > 0) {
-    //float temperature_prev = temperatures[i];
-
-    if (temperatures[i] < 27) {
-      if (values_type_time[i] > 150) {
-        kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.05, 0.03) * draw_shape_scale;
-      } else {
-        kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.03, 0.03) * draw_shape_scale;
+    if (mode == M_ANIMATE_2) {
+      if (cursor_y > (plot_y2-75)) {
+        for (int j=0; j < index+1; j++) {
+          modified_shapes[i] = null;
+        }
+        index = -1;
       }
+    }
+  
+
+
+  debug_str += x + "\t\t"+ y + "\n";
+
+  strokeWeight = map(constrain(values_pressure_sensor[i], 0, 1024), 0, 1024, 0.005, 0.04);
+  strokeWeight *= draw_shape_scale; 
+
+
+
+  strokeWeight(strokeWeight);
+  stroke(0);
+  strokeCap(SQUARE);
+  strokeJoin(BEVEL);
+  noFill();
+
+  if (mode == M_ANIMATE_1) {
+    float half_width = shape_width(shape) / 2;
+    shape(shape, x-half_width, y);
+  } else {
+    shape(shape, x, y);
+  }
+
+  // unused
+  positions_xy[i][X] = x;
+  positions_xy[i][Y] = y;
+
+  cursor_x += shape_width(shape);
+
+  // adjust kerning
+  //float new_width = shape_width(shape) * (1.0 / shape.height);
+  //float difference_width = new_width - original_width_chars[index_in_allowed_chars(c)];
+  //cursor_x -= shape_width(shape) * difference_width;
+  //cursor_x += draw_shape_scale * 0.05;
+
+  //if (i > 0) {
+  //float temperature_prev = temperatures[i];
+
+  //if (temperatures[i] < 27) {
+  //  if (values_type_time[i] > 150) {
+  //    kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.05, 0.03) * draw_shape_scale;
+  //  } else {
+  //    kerning = map(constrain(temperatures[i], min_temperature, 27), min_temperature, 27, -0.03, 0.03) * draw_shape_scale;
+  //  }
+  //} else {
+  //  kerning = 0.03 * draw_shape_scale;
+  //}
+
+  char next_char = typed_chars[i+1];
+
+  if (temperatures[i] < 30) {
+
+
+    kerning_factor_timediff = map(constrain(values_type_time[i], 30, 600), 100, 500, 0.5, 1); 
+    //kerning = map(temperatures[i], min_temperature, max_temperature, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
+
+
+
+    // meer ruimte nodig achter de letter
+    if (c == 'b' || c == 'f' || c == 'i' || c == 'k' || c == 'l' || c == 'p' || c == 't' || c == 'v' || c == 'w') {
+      kerning = map(temperatures[i], min_temperature, 29, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
     } else {
-      kerning = 0.03 * draw_shape_scale;
+      kerning = map(temperatures[i], min_temperature, 29, -0.05, 0.03) * draw_shape_scale * kerning_factor_timediff;
     }
 
-    char next_char = typed_chars[i+1];
+    // meer ruimte nodig voor de letter
+    if ( next_char == 'l' || next_char == 'i' || next_char == 'k' || next_char == 'j' || next_char == ' ') {
+      kerning += 0.03 * draw_shape_scale;
+      //println("kerning "+kerning);
+    }
+
+
+
+
+
+    //      kerning = map(temperatures[i], min_temperature, 29, -0.07, 0.03) * draw_shape_scale * kerning_factor_timediff;
+  } else {
+    kerning = 0.03 * draw_shape_scale;
+  }
+
+  //println("kerning "+kerning);
+
+  if (temperatures[i] >= 30) {
+
     if (c != '\0' && c != ' ' && c != '\n') {
       if ((c == 'A' && next_char == 'V') || (c == 'V' && next_char == 'A')) {
         if (values_type_time[i] < 150) {
@@ -491,73 +559,103 @@ void draw() {
           kerning = -0.06 * draw_shape_scale;
         }
       }
-    }
+      // meer ruimte nodig achter de letter
+      if (c == 'i' || c == 'l') {
+        kerning *= 1.2;
+      }
 
+      // meer ruimte nodig voor de letter
+      if (next_char == 'r') {
+        kerning *= 1.2;
+      }
 
-    //cursor_x +=  shape_width(shape) * kerning;
-    cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
+      // minder ruimte nodig achter de letter
+      if (c == 'r') {
+        if (next_char == 'k' || next_char == 'l' || next_char == 'm' || next_char == 'n') {
+          kerning *= 1;
+        } else {
+          kerning *= 0.2;
+        }
+      }
 
-
-    //float prev_char = typed_chars[i-1];
-
-
-    //prev_char = c;
-
-
-
-
-    if (show_shapeframe) {
-      noFill();
-      stroke(i % 2 == 0 ? color(255, 0, 0) :  color(0, 0, 255));
-      strokeWeight(1);
-      rectMode(CORNER);
-      println(shape.width);
-      rect(x, y, shape.width, shape.height);
-      line(x, y + shape.height * base_line, x + shape.width, y + shape.height * base_line);
-      line(x, y, x + shape.width, y + shape.height);
-
-      //text(difference_width, x + (shape.width/2), y);
+      // minder ruimte nodig achter de letter
+      if (c == 'V' || c == 'W' || c == 'T') {
+        if (next_char != 'k' && next_char != 'l' && next_char != 'b' && next_char != 'K' && next_char != 'P' && next_char != 'h' && next_char != 'I' && next_char != 'r' && next_char != 't' && next_char != 'f' && next_char != 'i' && next_char != 'm' && next_char != 'n' && next_char != 'p' && next_char != 'u' && next_char != 'v' && next_char != 'w' && next_char != 'y') {
+          kerning -= 0.05 * draw_shape_scale;
+        }
+      }
     }
   }
-  //}
 
 
 
 
 
 
-  //text(index, 20, 100);
+  //cursor_x +=  shape_width(shape) * kerning;
+  cursor_x += kerning + ((strokeWeights[i]/2) + (strokeWeights[i+1]/2));
 
-  // PRINT THE DATA AND VARIABLE VALUES
-  textAlign(LEFT, BOTTOM);
+
+  //float prev_char = typed_chars[i-1];
+
+
+  //prev_char = c;
+
+
+
+
+  if (show_shapeframe) {
+    noFill();
+    stroke(i % 2 == 0 ? color(255, 0, 0) :  color(0, 0, 255));
+    strokeWeight(1);
+    rectMode(CORNER);
+    //println(shape.width);
+    rect(x, y, shape.width, shape.height);
+    line(x, y + shape.height * base_line, x + shape.width, y + shape.height * base_line);
+    line(x, y, x + shape.width, y + shape.height);
+
+    //text(difference_width, x + (shape.width/2), y);
+  }
+}
+//}
+
+
+
+
+
+
+//text(index, 20, 100);
+
+// PRINT THE DATA AND VARIABLE VALUES
+textAlign(LEFT, BOTTOM);
+fill(0);
+textFont(basic);
+String temperature = nfc(temp, 1);
+//textAlign(CENTER);
+text(temperature + "°C", lerp(plot_x1, plot_x2, 0.6), plot_y2);
+//text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
+text(time_diff +" ms/key", lerp(plot_x1, plot_x2, 0.3), plot_y2);
+text(((int) bpm)+" BPM", plot_x2 - textWidth("XXX BPM"), plot_y2);
+text("pressure "+((int) force), plot_x1, plot_y2);
+
+if (record) {
+  endRecord();
+  record = false;
+}
+
+//if (keyPressed(CONTROL) && (keyPressed('r') || keyPressed('R'))) {
+//  saveFrame("../MOVIEMAKER/frame-####.tif");
+//}
+
+//saveFrame("../MOVIEMAKER/frame-#######.tif");
+
+
+if (DEBUG) {
   fill(0);
-  textFont(basic);
-  String temperature = nfc(temp, 1);
-  //textAlign(CENTER);
-  text(temperature + "°C", lerp(plot_x1, plot_x2, 0.6), plot_y2);
-  //text(bpm + " BPM", (width-100), plot_y2);    // print the Beats Per Minute
-  text(time_diff +" ms/key", lerp(plot_x1, plot_x2, 0.3), plot_y2);
-  text(((int) bpm)+" BPM", plot_x2 - textWidth("XXX BPM"), plot_y2);
-  text("pressure "+((int) force), plot_x1, plot_y2);
-
-  if (record) {
-    endRecord();
-    record = false;
-  }
-
-  //if (keyPressed(CONTROL) && (keyPressed('r') || keyPressed('R'))) {
-  //  saveFrame("../MOVIEMAKER/frame-####.tif");
-  //}
-
-  saveFrame("../MOVIEMAKER/frame-####.tif");
-
-
-  if (DEBUG) {
-    fill(0);
-    textAlign(LEFT, TOP);
-    debug_str = "";
-    text(debug_str, width-100, 50);
-  }
+  textAlign(LEFT, TOP);
+  debug_str = "";
+  text(debug_str, width-100, 50);
+}
 }
 
 // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -593,6 +691,17 @@ PShape loadCharShape(char c) {
   if (cs.equals(",")) cs = "comma";
   if (cs.equals("?")) cs = "questionmark";
   if (cs.equals("!")) cs = "exclamationmark";
+  if (cs.equals("&")) cs = "and";
+  if (cs.equals("@")) cs = "atsign";
+  if (cs.equals(";")) cs = "dotcomma";
+  if (cs.equals(":")) cs = "doubledot";
+  //if (cs.equals("'")) cs = "quotationmarkopen";
+  //if (cs.equals("'")) cs = "quotationmarkclosed";
+  if (cs.equals("#")) cs = "hashtag";
+  //if (cs.equals('"')) cs = "doublequotationmarkopen";
+  //if (cs.equals('"')) cs = "doublequotationmarkclosed";
+  if (cs.equals("(")) cs = "parenthesisopen";
+  if (cs.equals(")")) cs = "parenthesisclosed";
   if (cs.toUpperCase().equals(cs)) cs = cs + cs;
 
 
@@ -726,4 +835,64 @@ String rest_word(String s, int start_index) {
     result += c;
   } 
   return result;
+}
+
+// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+//E-mail part
+
+public static boolean validate(String emailStr) {
+  Matcher matcher = VALID_EMAIL_ADDRESS_REGEX .matcher(emailStr);
+  return matcher.find();
+}
+
+
+void test() {
+
+  Properties props = new Properties();
+  props.put("mail.smtp.auth", true);
+  props.put("mail.smtp.starttls.enable", true);
+  props.put("mail.smtp.host", "smtp.gmail.com");
+  props.put("mail.smtp.port", "587");
+
+  Session session = Session.getInstance(props, 
+    new javax.mail.Authenticator() {
+    protected PasswordAuthentication getPasswordAuthentication() {
+      return new PasswordAuthentication(username, password);
+    }
+  }
+  );
+
+  try {
+
+    Message message = new MimeMessage(session);
+    message.setFrom(new InternetAddress(username));
+    message.setRecipients(Message.RecipientType.TO, 
+      InternetAddress.parse("madelon.balk@gmail.com"));
+    message.setSubject("Testing Subject");
+    message.setText("PFA");
+
+    MimeBodyPart messageBodyPart = new MimeBodyPart();
+
+    Multipart multipart = new MimeMultipart();
+
+    messageBodyPart = new MimeBodyPart();
+    String file = dataPath("")+"/Schermafbeelding 2016-06-25 om 01.51.17.png";
+    String fileName = "Schermafbeelding 2016-06-25 om 01.51.17.png";
+    DataSource source = new FileDataSource(file);
+    messageBodyPart.setDataHandler(new DataHandler(source));
+    messageBodyPart.setFileName(fileName);
+    multipart.addBodyPart(messageBodyPart);
+
+    message.setContent(multipart);
+
+    System.out.println("Sending");
+
+    Transport.send(message);
+
+    System.out.println("Done");
+  } 
+  catch (MessagingException e) {
+    e.printStackTrace();
+  }
 }
