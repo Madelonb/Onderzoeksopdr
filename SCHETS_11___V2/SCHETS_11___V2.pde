@@ -41,7 +41,7 @@ final int MAX_SIZE = 2048;
 Serial port;
 
 
-char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n', '&', '@', ';', '#', '(', ')', ':', '\''};//, '"'};
+char[] allowed_chars = {' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '!', '.', '?', '\n', '&', '@', ';', '#', '(', ')', ':', '\'', '"'};//, '"'};
 
 float[] original_width_chars = new float[allowed_chars.length];
 
@@ -171,7 +171,7 @@ void setup() {
     draw_shape_scale = 850;
   } 
   if (mode == M_ANIMATE_2) {
-    //typed_chars[0] = 'a';
+    //typed_chars[0] = 'b';
     //typed_chars[1] = 'b';
     draw_shape_scale = 150;
   }
@@ -236,14 +236,8 @@ void draw() {
     //}
 
 
-    if (line_count == 6){
-      clear();
-      animated_char_index += 1;
-      force = 50;
-      bpm = 50;
-      temp = 30;
-      line_count = -1;
-    }
+
+
 
     println("linecount "+line_count);
   }
@@ -439,7 +433,7 @@ void draw() {
     cursor_y = 50;
   } else {
     cursor_x = plot_x1;
-    cursor_y = plot_y1 - draw_shape_scale * 0.3;
+    cursor_y = plot_y1 - draw_shape_scale * 0.2;
   }
 
   float last_cursor_x = -1;
@@ -447,6 +441,8 @@ void draw() {
 
 
   for (int i = 0; i <= index; i++) {
+
+
 
 
 
@@ -555,6 +551,20 @@ void draw() {
       break;
     }
 
+    if (line_count == 6) {
+      index -= 1;
+      clear();
+      animated_char_index += 1;
+      force = 50;
+      bpm = 50;
+      temp = 30;
+      line_count = -1;
+      break;
+    }
+    
+    println("y "+cursor_y);
+
+
     if (mode == M_ANIMATE_2) {
       if (cursor_y > (plot_y2-75)) {
         for (int j=0; j < index+1; j++) {
@@ -563,7 +573,6 @@ void draw() {
         index = -1;
       }
     }
-
 
 
     debug_str += x + "\t\t"+ y + "\n";
@@ -624,6 +633,8 @@ void draw() {
       // meer ruimte nodig achter de letter
       if (c == 'b' || c == 'f' || c == 'i' || c == 'k' || c == 'l' || c == 'p' || c == 't' || c == 'v' || c == 'w') {
         kerning = map(constrain(temperatures[i], 25, 30), min_temperature, 29, -0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
+      } else if (c == '"' || c == '.' || c == ',' || c == '\'') {
+        kerning = map(constrain(temperatures[i], 25, 30), min_temperature, 29, 0.03, 0.03) * draw_shape_scale * kerning_factor_timediff;
       } else {
         kerning = map(constrain(temperatures[i], 25, 30), min_temperature, 29, -0.05, 0.03) * draw_shape_scale * kerning_factor_timediff;
       }
@@ -672,6 +683,10 @@ void draw() {
           } else {
             kerning *= 0.2;
           }
+        }
+
+        if (c == '\'') {
+          kerning = 0.06;
         }
 
         // minder ruimte nodig achter de letter
@@ -746,7 +761,7 @@ void draw() {
   //  saveFrame("../MOVIEMAKER/frame-####.tif");
   //}
 
-  //saveFrame("../MOVIEMAKER/frame-#######.tif");
+  saveFrame("../MOVIEMAKER/frame-#######.tif");
 
   //println("!!!! "+line_count);
 
@@ -812,11 +827,11 @@ PShape loadCharShape(char c) {
   if (cs.equals(";")) cs = "dotcomma";
   if (cs.equals(":")) cs = "doubledot";
   if (cs.equals("'")) cs = "quotationmarkopen";
-  if (cs.equals("‘")) cs = "quotationmarkopen";
-  if (cs.equals("’")) cs = "quotationmarkclosed";
+  //if (cs.equals("‘")) cs = "quotationmarkopen";
+  //if (cs.equals("’")) cs = "quotationmarkclosed";
   if (cs.equals("#")) cs = "hashtag";
-  if (cs.equals("“")) cs = "doublequotationmarkopen";
-  if (cs.equals("”")) cs = "doublequotationmarkclosed";
+  if (cs.equals("\"")) cs = "doublequotationmarkopen";
+  //if (cs.equals("”")) cs = "doublequotationmarkclosed";
   if (cs.equals("(")) cs = "parenthesisopen";
   if (cs.equals(")")) cs = "parenthesisclosed";
   if (cs.toUpperCase().equals(cs)) cs = cs + cs;
